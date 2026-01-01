@@ -16,6 +16,15 @@ pub enum AppError {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("AI error: {0}")]
+    AI(String),
+
+    #[error("Keychain error: {0}")]
+    Keychain(String),
+
+    #[error("Invalid settings: {0}")]
+    InvalidSettings(String),
 }
 
 // Tauri requires Serialize for IPC to the frontend.
@@ -25,5 +34,11 @@ impl serde::Serialize for AppError {
         S: serde::ser::Serializer,
     {
         serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl From<keyring::Error> for AppError {
+    fn from(err: keyring::Error) -> Self {
+        AppError::Keychain(err.to_string())
     }
 }

@@ -32,3 +32,10 @@ chrono = { version = "0.4", features = ["serde"] }
 
 # 错误处理
 thiserror = "1"
+
+# AI 相关
+async-trait = "0.1"
+reqwest = { version = "0.12", features = ["json"] }
+
+# 安全存储
+keyring = "2.3"

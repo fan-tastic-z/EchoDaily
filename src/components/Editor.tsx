@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { useAutosave } from '../hooks/useAutosave';
 import { getEntry, deleteEntry } from '../lib/api';
 import { Trash2, Heading1, Heading2, Heading3, List, ListOrdered, Bold, Italic } from 'lucide-react';
+import { SelectionMenu } from './SelectionMenu';
 
 const editorStyles = `
   .ProseMirror {
@@ -131,6 +132,11 @@ export function Editor() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Selection menu state
+  const [showSelectionMenu, setShowSelectionMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [selectedText, setSelectedText] = useState('');
+
   const { flushNow } = useAutosave();
 
   useEffect(() => {
@@ -174,6 +180,42 @@ export function Editor() {
     }
   };
 
+  // Handle selection change to show AI menu
+  const handleSelectionUpdate = ({ editor }: { editor: any }) => {
+    const { from, to, empty } = editor.state.selection;
+
+    // Only show menu when there's a non-empty selection
+    if (empty || from === null || to === null) {
+      setShowSelectionMenu(false);
+      return;
+    }
+
+    const text = editor.state.doc.textBetween(from, to);
+    if (text.trim().length === 0) {
+      setShowSelectionMenu(false);
+      return;
+    }
+
+    setSelectedText(text);
+
+    // Calculate menu position
+    const coords = editor.view.coordsAtPos(from);
+    if (coords) {
+      setMenuPosition({ x: coords.left, y: coords.top });
+      setShowSelectionMenu(true);
+    }
+  };
+
+  // Handle AI result replacement
+  const handleReplaceText = (newText: string) => {
+    if (editor) {
+      editor.commands.insertContentAt({
+        from: editor.state.selection.from,
+        to: editor.state.selection.to,
+      }, newText);
+    }
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -200,6 +242,7 @@ export function Editor() {
       markDirty(selectedDate);
       setSaveStatus('idle');
     },
+    onSelectionUpdate: handleSelectionUpdate,
     onBlur: () => {
       void flushNow();
     },
@@ -372,6 +415,17 @@ export function Editor() {
           </div>
         </div>
       </main>
+
+      {/* AI Selection Menu */}
+      {showSelectionMenu && (
+        <SelectionMenu
+          isVisible={showSelectionMenu}
+          position={menuPosition}
+          selectedText={selectedText}
+          onReplace={handleReplaceText}
+          onClose={() => setShowSelectionMenu(false)}
+        />
+      )}
 
       {/* Delete confirmation dialog */}
       {showDeleteConfirm && (

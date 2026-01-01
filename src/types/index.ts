@@ -23,3 +23,25 @@ export interface UIState {
   selectedDate: string;
   saveStatus: SaveStatus;
 }
+
+// AI Operation
+export interface AIOperation {
+  id: string;
+  entry_id: string;
+  op_type: string; // "polish", "expand", "fix_grammar"
+  original_text: string;
+  result_text: string;
+  provider: string;
+  model: string;
+  created_at: number;
+}
+
+// AI Settings (without actual API key for security)
+export interface AISettings {
+  provider: string;
+  model: string;
+  api_key: string; // Masked as "***" when returned from backend
+}
+
+// AI operation types
+export type AIOpType = 'polish' | 'expand' | 'fix_grammar';

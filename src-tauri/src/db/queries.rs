@@ -1,6 +1,6 @@
 use sqlx::SqlitePool;
 use uuid::Uuid;
-use crate::models::DiaryEntry;
+use crate::models::{DiaryEntry, AIOperation};
 use crate::error::AppError;
 
 pub async fn upsert_entry(
@@ -92,4 +92,75 @@ pub async fn delete_entry(
         .await?;
 
     Ok(result.rows_affected() > 0)
+}
+
+// AI Operations
+
+pub async fn create_ai_operation(
+    pool: &SqlitePool,
+    entry_id: &str,
+    op_type: &str,
+    original_text: &str,
+    result_text: &str,
+    provider: &str,
+    model: &str,
+) -> Result<AIOperation, AppError> {
+    let id = Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().timestamp_millis();
+
+    let operation = AIOperation {
+        id: id.clone(),
+        entry_id: entry_id.to_string(),
+        op_type: op_type.to_string(),
+        original_text: original_text.to_string(),
+        result_text: result_text.to_string(),
+        provider: provider.to_string(),
+        model: model.to_string(),
+        created_at: now,
+    };
+
+    sqlx::query(
+        "INSERT INTO ai_operations (id, entry_id, op_type, original_text, result_text, provider, model, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    )
+    .bind(&operation.id)
+    .bind(&operation.entry_id)
+    .bind(&operation.op_type)
+    .bind(&operation.original_text)
+    .bind(&operation.result_text)
+    .bind(&operation.provider)
+    .bind(&operation.model)
+    .bind(operation.created_at)
+    .execute(pool)
+    .await?;
+
+    Ok(operation)
+}
+
+pub async fn list_ai_operations(
+    pool: &SqlitePool,
+    entry_id: &str,
+) -> Result<Vec<AIOperation>, AppError> {
+    let operations = sqlx::query_as::<_, AIOperation>(
+        "SELECT * FROM ai_operations
+         WHERE entry_id = ?
+         ORDER BY created_at DESC"
+    )
+    .bind(entry_id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(operations)
+}
+
+pub async fn delete_ai_operations_for_entry(
+    pool: &SqlitePool,
+    entry_id: &str,
+) -> Result<u64, AppError> {
+    let result = sqlx::query("DELETE FROM ai_operations WHERE entry_id = ?")
+        .bind(entry_id)
+        .execute(pool)
+        .await?;
+
+    Ok(result.rows_affected())
 }
