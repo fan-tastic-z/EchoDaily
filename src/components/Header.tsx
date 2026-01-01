@@ -1,0 +1,20 @@
+import { Search, Settings, Calendar } from 'lucide-react';
+
+export function Header() {
+  return (
+    <header className="h-14 border-b border-border/40 bg-paper-dark/50 flex items-center justify-between px-4 paper-shadow">
+      <div className="flex items-center gap-3">
+        <Calendar className="w-5 h-5 text-ink-secondary" />
+        <h1 className="text-lg font-semibold text-ink-primary">Echo Daily</h1>
+      </div>
+      <div className="flex items-center gap-2">
+        <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="搜索">
+          <Search className="w-4 h-4 text-ink-secondary" />
+        </button>
+        <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="设置">
+          <Settings className="w-4 h-4 text-ink-secondary" />
+        </button>
+      </div>
+    </header>
+  );
+}
