@@ -12,22 +12,22 @@ export async function upsertEntry(
   contentJson: string
 ): Promise<DiaryEntry> {
   return invoke('upsert_entry', {
-    entry_date: entryDate,
-    content_json: contentJson,
+    entryDate: entryDate,
+    contentJson: contentJson,
   });
 }
 
 // Get a diary entry by date
 export async function getEntry(entryDate: string): Promise<DiaryEntry | null> {
-  return invoke('get_entry', { entry_date: entryDate });
+  return invoke('get_entry', { entryDate: entryDate });
 }
 
 // List diary entries by month
 export async function listEntries(month: string): Promise<DiaryEntry[]> {
-  return invoke('list_entries', { month });
+  return invoke('list_entries', { month: month });
 }
 
 // Delete a diary entry by date
 export async function deleteEntry(entryDate: string): Promise<boolean> {
-  return invoke('delete_entry', { entry_date: entryDate });
+  return invoke('delete_entry', { entryDate: entryDate });
 }

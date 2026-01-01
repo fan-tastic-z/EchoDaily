@@ -46,12 +46,17 @@ export function useAutosave() {
 
       try {
         setSaveStatus('saving');
+        console.log('Saving entry for date:', selectedDate);
+        console.log('Editor content:', editorContent);
         const contentJson = JSON.stringify(editorContent as ProseMirrorNode);
-        await upsertEntry(selectedDate, contentJson);
+        console.log('Content JSON length:', contentJson.length);
+        const result = await upsertEntry(selectedDate, contentJson);
+        console.log('Save result:', result);
         setSaveStatus('saved');
         clearDirty();
       } catch (error) {
         console.error('Autosave failed:', error);
+        console.error('Error details:', JSON.stringify(error));
         setSaveStatus('error');
       }
     }, AUTOSAVE_DELAY_MS);
