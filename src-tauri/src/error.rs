@@ -18,7 +18,7 @@ pub enum AppError {
     Io(#[from] std::io::Error),
 }
 
-// Tauri 需要实现 Serialize 以便可以传递给前端
+// Tauri requires Serialize for IPC to the frontend.
 impl serde::Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

@@ -10,7 +10,7 @@ pub async fn upsert_entry(
 ) -> Result<DiaryEntry, AppError> {
     let now = chrono::Utc::now().timestamp_millis();
 
-    // 尝试更新现有条目
+    // Try to update an existing entry first.
     let result = sqlx::query_as::<_, DiaryEntry>(
         "UPDATE entries 
          SET content_json = ?, updated_at = ? 
@@ -26,7 +26,7 @@ pub async fn upsert_entry(
     if let Some(entry) = result {
         Ok(entry)
     } else {
-        // 创建新条目
+        // Otherwise create a new entry.
         let id = Uuid::new_v4().to_string();
         let entry = DiaryEntry {
             id: id.clone(),

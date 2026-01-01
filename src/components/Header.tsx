@@ -8,10 +8,10 @@ export function Header() {
         <h1 className="text-lg font-semibold text-ink-primary">Echo Daily</h1>
       </div>
       <div className="flex items-center gap-2">
-        <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="搜索">
+        <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="Search">
           <Search className="w-4 h-4 text-ink-secondary" />
         </button>
-        <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="设置">
+        <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="Settings">
           <Settings className="w-4 h-4 text-ink-secondary" />
         </button>
       </div>

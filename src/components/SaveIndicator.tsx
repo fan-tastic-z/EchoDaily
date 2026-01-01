@@ -10,13 +10,13 @@ const statusConfig: Record<SaveStatus, { icon: React.ReactNode; text: string; cl
 };
 
 export function SaveIndicator() {
-  const { saveStatus } = useAppStore();
+  const { saveStatus, lastSaveError } = useAppStore();
   const config = statusConfig[saveStatus];
 
   if (saveStatus === 'idle') return null;
 
   return (
-    <div className={`flex items-center gap-1.5 text-xs ${config.className}`}>
+    <div className={`flex items-center gap-1.5 text-xs ${config.className}`} title={saveStatus === 'error' ? lastSaveError ?? undefined : undefined}>
       {config.icon}
       <span>{config.text}</span>
     </div>

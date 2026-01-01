@@ -3,7 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { addMonths, format, getDaysInMonth } from 'date-fns';
 
 export function Sidebar() {
-  const { currentMonth, setCurrentMonth, selectedDate, setSelectedDate } = useAppStore();
+  const { currentMonth, setCurrentMonth, selectedDate, requestSelectDate } = useAppStore();
 
   const [year, month] = currentMonth.split('-').map((part) => Number(part));
   const monthStart = new Date(year, month - 1, 1);
@@ -66,7 +66,7 @@ export function Sidebar() {
             return (
               <button
                 key={day}
-                onClick={() => setSelectedDate(dateStr)}
+                onClick={() => requestSelectDate(dateStr)}
                 className={`
                   aspect-square flex items-center justify-center text-sm rounded-lg
                   transition-all hover:scale-105

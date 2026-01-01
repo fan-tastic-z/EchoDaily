@@ -7,7 +7,7 @@ import { initDb } from './lib/api';
 import './App.css';
 
 function App() {
-  // 初始化数据库
+  // Initialize the database
   useEffect(() => {
     initDb().catch(console.error);
   }, []);

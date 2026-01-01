@@ -1,13 +1,13 @@
-// 日记条目
+// Diary entry
 export interface DiaryEntry {
   id: string;
   entry_date: string; // YYYY-MM-DD
-  content_json: string; // ProseMirror JSON 序列化后的字符串
+  content_json: string; // ProseMirror JSON serialized string
   created_at: number; // unix timestamp ms
   updated_at: number; // unix timestamp ms
 }
 
-// ProseMirror JSON 类型
+// ProseMirror JSON type
 export type ProseMirrorNode = {
   type: string;
   content?: ProseMirrorNode[];
@@ -15,10 +15,10 @@ export type ProseMirrorNode = {
   attrs?: Record<string, unknown>;
 };
 
-// 保存状态
+// Save status
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-// UI 状态
+// UI state
 export interface UIState {
   selectedDate: string;
   saveStatus: SaveStatus;

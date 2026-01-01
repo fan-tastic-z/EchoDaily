@@ -115,11 +115,44 @@ const editorStyles = `
 `;
 
 export function Editor() {
-  const { selectedDate, editorContent, setEditorContent, setSaveStatus, currentEntry, setCurrentEntry, markDirty, clearDirty } = useAppStore();
+  const {
+    selectedDate,
+    pendingSelectedDate,
+    setSelectedDate,
+    clearPendingSelectDate,
+    editorContent,
+    setEditorContent,
+    setSaveStatus,
+    currentEntry,
+    setCurrentEntry,
+    markDirty,
+    clearDirty,
+  } = useAppStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useAutosave();
+  const { flushNow } = useAutosave();
+
+  useEffect(() => {
+    if (!pendingSelectedDate) return;
+    if (pendingSelectedDate === selectedDate) {
+      clearPendingSelectDate();
+      return;
+    }
+
+    const switchDate = async () => {
+      const ok = await flushNow();
+      if (!ok) {
+        clearPendingSelectDate();
+        return;
+      }
+
+      setSelectedDate(pendingSelectedDate);
+      clearPendingSelectDate();
+    };
+
+    void switchDate();
+  }, [clearPendingSelectDate, flushNow, pendingSelectedDate, selectedDate, setSelectedDate]);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -127,7 +160,7 @@ export function Editor() {
       await deleteEntry(selectedDate);
       // Clear editor and state
       if (editor) {
-        editor.commands.clearContent();
+        editor.commands.clearContent(false);
       }
       setEditorContent({ type: 'doc', content: [] });
       setCurrentEntry(null);
@@ -166,6 +199,9 @@ export function Editor() {
       setEditorContent(json);
       markDirty(selectedDate);
       setSaveStatus('idle');
+    },
+    onBlur: () => {
+      void flushNow();
     },
     editorProps: {
       attributes: {
@@ -255,7 +291,7 @@ export function Editor() {
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="p-2 rounded-lg hover:bg-red-100 text-stone-500 hover:text-red-600 transition-colors"
-              title="删除日记"
+              title="Delete entry"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -272,21 +308,21 @@ export function Editor() {
                   <ToolbarButton
                     onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                     isActive={editor.isActive('heading', { level: 1 })}
-                    title="标题 1"
+                    title="Heading 1"
                   >
                     <Heading1 className="w-4 h-4" />
                   </ToolbarButton>
                   <ToolbarButton
                     onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                     isActive={editor.isActive('heading', { level: 2 })}
-                    title="标题 2"
+                    title="Heading 2"
                   >
                     <Heading2 className="w-4 h-4" />
                   </ToolbarButton>
                   <ToolbarButton
                     onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
                     isActive={editor.isActive('heading', { level: 3 })}
-                    title="标题 3"
+                    title="Heading 3"
                   >
                     <Heading3 className="w-4 h-4" />
                   </ToolbarButton>
@@ -297,14 +333,14 @@ export function Editor() {
                   <ToolbarButton
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     isActive={editor.isActive('bold')}
-                    title="粗体"
+                    title="Bold"
                   >
                     <Bold className="w-4 h-4" />
                   </ToolbarButton>
                   <ToolbarButton
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                     isActive={editor.isActive('italic')}
-                    title="斜体"
+                    title="Italic"
                   >
                     <Italic className="w-4 h-4" />
                   </ToolbarButton>
@@ -315,14 +351,14 @@ export function Editor() {
                   <ToolbarButton
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
                     isActive={editor.isActive('bulletList')}
-                    title="无序列表"
+                    title="Bullet list"
                   >
                     <List className="w-4 h-4" />
                   </ToolbarButton>
                   <ToolbarButton
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}
                     isActive={editor.isActive('orderedList')}
-                    title="有序列表"
+                    title="Ordered list"
                   >
                     <ListOrdered className="w-4 h-4" />
                   </ToolbarButton>
@@ -341,9 +377,9 @@ export function Editor() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 paper-shadow p-6">
-            <h3 className="text-lg font-semibold text-stone-800 mb-2">删除日记</h3>
+            <h3 className="text-lg font-semibold text-stone-800 mb-2">Delete entry</h3>
             <p className="text-stone-600 mb-6">
-              确定要删除 {format(displayDate, 'yyyy年MM月dd日')} 的日记吗？此操作无法撤销。
+              Delete the entry for {format(displayDate, 'MMM d, yyyy')}? This action cannot be undone.
             </p>
             <div className="flex items-center justify-end gap-2">
               <button
@@ -351,14 +387,14 @@ export function Editor() {
                 disabled={isDeleting}
                 className="px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-lg transition-colors disabled:opacity-50"
               >
-                取消
+                Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
               >
-                {isDeleting ? '删除中...' : '确认删除'}
+                {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>
