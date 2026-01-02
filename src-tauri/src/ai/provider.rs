@@ -88,6 +88,7 @@ pub trait AIProvider: Send + Sync {
 
 /// Settings for AI providers (stored securely)
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AISettings {
     pub provider: String,    // "zhipu", "openai", etc.
     pub model: String,       // e.g., "glm-4-flash"

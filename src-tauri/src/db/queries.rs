@@ -164,3 +164,41 @@ pub async fn delete_ai_operations_for_entry(
 
     Ok(result.rows_affected())
 }
+
+// ===== App Settings =====
+
+/// Save an app setting (key-value store)
+pub async fn save_setting(
+    pool: &SqlitePool,
+    key: &str,
+    value: &str,
+) -> Result<(), AppError> {
+    let now = chrono::Utc::now().timestamp_millis();
+
+    sqlx::query(
+        "INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?"
+    )
+    .bind(key)
+    .bind(value)
+    .bind(now)
+    .bind(value)
+    .bind(now)
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+/// Get an app setting by key
+pub async fn get_setting(
+    pool: &SqlitePool,
+    key: &str,
+) -> Result<Option<String>, AppError> {
+    let result = sqlx::query_scalar("SELECT value FROM app_settings WHERE key = ?")
+        .bind(key)
+        .fetch_optional(pool)
+        .await?;
+
+    Ok(result)
+}

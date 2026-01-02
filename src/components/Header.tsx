@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Search, Settings, Calendar, Wand2 } from 'lucide-react';
+import { Search, Settings, Calendar, Wand2, Volume2 } from 'lucide-react';
 import { AISettingsDialog } from './AISettings';
+import { TTSSettingsDialog } from './TTSSettings';
 
 export function Header() {
   const [showAISettings, setShowAISettings] = useState(false);
+  const [showTTSSettings, setShowTTSSettings] = useState(false);
 
   return (
     <>
@@ -13,8 +15,19 @@ export function Header() {
           <h1 className="text-lg font-semibold text-ink-primary">Echo Daily</h1>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="AI Settings" onClick={() => setShowAISettings(true)}>
+          <button
+            className="p-2 rounded-lg hover:bg-white/40 transition-colors"
+            title="AI Settings"
+            onClick={() => setShowAISettings(true)}
+          >
             <Wand2 className="w-4 h-4 text-accent-blue" />
+          </button>
+          <button
+            className="p-2 rounded-lg hover:bg-white/40 transition-colors"
+            title="TTS Settings"
+            onClick={() => setShowTTSSettings(true)}
+          >
+            <Volume2 className="w-4 h-4 text-accent-blue" />
           </button>
           <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="Search">
             <Search className="w-4 h-4 text-ink-secondary" />
@@ -26,6 +39,7 @@ export function Header() {
       </header>
 
       <AISettingsDialog isOpen={showAISettings} onClose={() => setShowAISettings(false)} />
+      <TTSSettingsDialog isOpen={showTTSSettings} onClose={() => setShowTTSSettings(false)} />
     </>
   );
 }

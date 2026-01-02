@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Wand2 } from 'lucide-react';
 import { getAISettings, saveAISettings } from '../lib/api';
-import type { AISettings } from '../types';
 
 interface Props {
   isOpen: boolean;

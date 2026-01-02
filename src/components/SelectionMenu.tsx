@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wand2, Plus, CheckCircle, Loader2, Languages, X } from 'lucide-react';
+import { Wand2, Plus, Loader2, Languages, X } from 'lucide-react';
 import { aiPolish } from '../lib/api';
 import { useAppStore } from '../store/useAppStore';
 

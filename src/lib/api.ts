@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { DiaryEntry, AIOperation, AISettings } from '../types';
+import type { DiaryEntry, AIOperation, AISettings, TTSVoice, TTSSettings, TTSResponse } from '../types';
 
 // Initialize the database (kept for compatibility; backend initializes on startup)
 export async function initDb(): Promise<void> {
@@ -53,11 +53,7 @@ export async function saveAISettings(settings: {
   model: string;
   apiKey: string;
 }): Promise<void> {
-  return invoke('save_ai_settings', {
-    provider: settings.provider,
-    model: settings.model,
-    apiKey: settings.apiKey,
-  });
+  return invoke('save_ai_settings', { settings });
 }
 
 // Get AI settings (API key will be masked)
@@ -70,4 +66,36 @@ export async function listAIOperations(
   entryId: string
 ): Promise<AIOperation[]> {
   return invoke('list_ai_operations', { entryId });
+}
+
+// ===== TTS Operations =====
+
+// Text to speech synthesis
+export async function textToSpeech(options: {
+  text: string;
+  voice?: string;
+  language?: string;
+  speed?: number;
+}): Promise<TTSResponse> {
+  return invoke('text_to_speech', {
+    text: options.text,
+    ...(options.voice !== undefined && { voice: options.voice }),
+    ...(options.language !== undefined && { language: options.language }),
+    ...(options.speed !== undefined && { speed: options.speed }),
+  });
+}
+
+// List available TTS voices
+export async function listTTSVoices(): Promise<TTSVoice[]> {
+  return invoke('list_tts_voices');
+}
+
+// Save TTS settings
+export async function saveTTSSettings(settings: TTSSettings): Promise<void> {
+  return invoke('save_tts_settings', { settings });
+}
+
+// Get TTS settings
+export async function getTTSSettings(): Promise<TTSSettings | null> {
+  return invoke('get_tts_settings');
 }

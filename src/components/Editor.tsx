@@ -8,6 +8,7 @@ import { useAutosave } from '../hooks/useAutosave';
 import { getEntry, deleteEntry } from '../lib/api';
 import { Trash2, Heading1, Heading2, Heading3, List, ListOrdered, Bold, Italic } from 'lucide-react';
 import { SelectionMenu } from './SelectionMenu';
+import { TTSPlayer } from './TTSPlayer';
 
 const editorStyles = `
   .ProseMirror {
@@ -131,6 +132,7 @@ export function Editor() {
   } = useAppStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [entryText, setEntryText] = useState('');
 
   // Selection menu state
   const [showSelectionMenu, setShowSelectionMenu] = useState(false);
@@ -239,6 +241,11 @@ export function Editor() {
     onUpdate: ({ editor }) => {
       const json = editor.getJSON();
       setEditorContent(json);
+
+      // Extract plain text for TTS
+      const text = editor.getText();
+      setEntryText(text);
+
       markDirty(selectedDate);
       setSaveStatus('idle');
     },
@@ -272,17 +279,24 @@ export function Editor() {
         const content = JSON.parse(currentEntry.content_json);
         editor.commands.setContent(content, { emitUpdate: false });
         setEditorContent(content);
+
+        // Extract plain text for TTS
+        const text = editor.getText();
+        setEntryText(text);
+
         clearDirty();
         setSaveStatus('idle');
       } catch {
         editor.commands.clearContent(false);
         setEditorContent({ type: 'doc', content: [] });
+        setEntryText('');
         clearDirty();
         setSaveStatus('idle');
       }
     } else if (editor && !currentEntry) {
       editor.commands.clearContent(false);
       setEditorContent({ type: 'doc', content: [] });
+      setEntryText('');
       clearDirty();
       setSaveStatus('idle');
     }
@@ -329,15 +343,21 @@ export function Editor() {
             </span>
           </div>
 
-          {/* Delete button - only show when there's content */}
+          {/* TTS Player and Delete button - only show when there's content */}
           {currentEntry && (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="p-2 rounded-lg hover:bg-red-100 text-stone-500 hover:text-red-600 transition-colors"
-              title="Delete entry"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* TTS Player */}
+              <TTSPlayer text={entryText} language="auto" />
+
+              {/* Delete button */}
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-2 rounded-lg hover:bg-red-100 text-stone-500 hover:text-red-600 transition-colors"
+                title="Delete entry"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </div>
 

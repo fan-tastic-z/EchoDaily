@@ -20,6 +20,9 @@ pub enum AppError {
     #[error("AI error: {0}")]
     AI(String),
 
+    #[error("TTS error: {0}")]
+    TTS(String),
+
     #[error("Keychain error: {0}")]
     Keychain(String),
 

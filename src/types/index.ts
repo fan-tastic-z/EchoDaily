@@ -45,3 +45,38 @@ export interface AISettings {
 
 // AI operation types
 export type AIOpType = 'polish' | 'expand' | 'fix_grammar';
+
+// ===== TTS Types =====
+
+// TTS output format
+export type TTSOutputFormat = 'mp3' | 'wav' | 'ogg';
+
+// TTS Voice
+export interface TTSVoice {
+  id: string;
+  name: string;
+  language: string;
+  gender?: string;
+  description?: string;
+}
+
+// TTS Response
+export interface TTSResponse {
+  audio_url?: string;  // Backend only
+  audio_base64?: string;  // Base64 encoded audio data
+  audio_file?: string;  // Path to audio file (for large files)
+  format: string;
+  duration_ms?: number;
+  provider: string;
+  model: string;
+  voice: string;
+}
+
+// TTS Settings
+export interface TTSSettings {
+  provider: string;
+  model: string;
+  apiKey: string;  // camelCase to match Rust serde serialization
+  voice?: string;
+  speed: number;
+}

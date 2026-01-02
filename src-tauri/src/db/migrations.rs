@@ -43,6 +43,19 @@ CREATE INDEX IF NOT EXISTS idx_ai_operations_created_at ON ai_operations(created
 CREATE INDEX IF NOT EXISTS idx_ai_operations_op_type ON ai_operations(op_type);
 "#;
 
+// Migration: add app settings table
+const MIGRATION_003: &str = r#"
+-- Application settings (key-value store)
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_app_settings_updated_at ON app_settings(updated_at);
+"#;
+
 pub async fn run(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     let mut conn = pool.begin().await?;
 
@@ -81,6 +94,17 @@ pub async fn run(pool: &SqlitePool) -> Result<(), sqlx::Error> {
         let now = chrono::Utc::now().timestamp_millis();
         sqlx::query("INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)")
             .bind(2_i64)
+            .bind(now)
+            .execute(&mut *conn)
+            .await?;
+    }
+
+    if current_version < 3 {
+        conn.execute(MIGRATION_003).await?;
+
+        let now = chrono::Utc::now().timestamp_millis();
+        sqlx::query("INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)")
+            .bind(3_i64)
             .bind(now)
             .execute(&mut *conn)
             .await?;
