@@ -1,9 +1,10 @@
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, Search, X } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { addMonths, format, getDaysInMonth } from 'date-fns';
-import { useEffect } from 'react';
-import { listEntries } from '../lib/api';
+import { useEffect, useState } from 'react';
+import { listEntries, searchEntries } from '../lib/api';
 import { MOOD_OPTIONS } from '../types';
+import type { DiaryEntry } from '../types';
 
 // Mood colors for calendar badges
 const MOOD_COLORS = {
@@ -16,6 +17,10 @@ const MOOD_COLORS = {
 
 export function Sidebar() {
   const { currentMonth, setCurrentMonth, selectedDate, requestSelectDate, monthEntries, setMonthEntries } = useAppStore();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<DiaryEntry[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   // Load entries for the current month
   useEffect(() => {
@@ -30,6 +35,31 @@ export function Sidebar() {
 
     loadMonthEntries();
   }, [currentMonth, setMonthEntries]);
+
+  // Handle search
+  useEffect(() => {
+    const handleSearch = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const results = await searchEntries(searchQuery);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Failed to search entries:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timeoutId = setTimeout(handleSearch, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   const [year, month] = currentMonth.split('-').map((part) => Number(part));
   const monthStart = new Date(year, month - 1, 1);
@@ -65,7 +95,8 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 border-r border-border/40 bg-paper-bg flex flex-col">
-      <div className="p-4 border-b border-border/40">
+      {/* Header with Month Navigation and Search Toggle */}
+      <div className="p-4 border-b border-border/40 space-y-3">
         <div className="flex items-center justify-between">
           <button
             onClick={prevMonth}
@@ -83,9 +114,96 @@ export function Sidebar() {
             <ChevronRight className="w-4 h-4 text-stone-600" />
           </button>
         </div>
+
+        {/* Search Toggle Button */}
+        {!showSearch ? (
+          <button
+            onClick={() => setShowSearch(true)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-stone-700 bg-white border border-stone-300 hover:border-accent-blue hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+          >
+            <Search className="w-4 h-4" />
+            <span>Search entries...</span>
+          </button>
+        ) : (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search entries..."
+              className="w-full pl-9 pr-8 py-2 text-sm border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSearchResults([]);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-stone-100 rounded"
+              >
+                <X className="w-3 h-3 text-stone-400" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
+      {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-3">
+        {/* Search Results */}
+        {showSearch && (searchQuery || searchResults.length > 0) && (
+          <div className="mb-4">
+            {searchQuery && searchResults.length === 0 && !isSearching && (
+              <div className="text-center py-8 text-stone-400 text-sm">
+                No results found for "{searchQuery}"
+              </div>
+            )}
+            {searchResults.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-stone-500 mb-2">
+                  {searchResults.length} {searchResults.length === 1 ? 'result' : 'results'}
+                </div>
+                {searchResults.map((entry) => (
+                  <button
+                    key={entry.id}
+                    onClick={() => {
+                      requestSelectDate(entry.entry_date);
+                      setShowSearch(false);
+                      setSearchQuery('');
+                      setSearchResults([]);
+                    }}
+                    className={`w-full text-left p-3 rounded-lg transition-all ${
+                      entry.entry_date === selectedDate
+                        ? 'bg-accent-blue text-white shadow-md'
+                        : 'bg-white/60 hover:bg-white/80 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium">
+                        {format(new Date(entry.entry_date + 'T00:00:00'), 'MMM d, yyyy')}
+                      </span>
+                      {entry.mood_emoji && (
+                        <span className="text-xs">{entry.mood_emoji}</span>
+                      )}
+                    </div>
+                    <div className={`text-xs truncate ${
+                      entry.entry_date === selectedDate ? 'text-white/80' : 'text-stone-500'
+                    }`}>
+                      {entry.content_json ? JSON.parse(entry.content_json).content?.[0]?.content?.[0]?.text || 'No content' : 'Empty entry'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {isSearching && (
+              <div className="text-center py-8 text-stone-400 text-sm">
+                Searching...
+              </div>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-7 gap-1.5">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
             <div

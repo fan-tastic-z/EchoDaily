@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Settings, Calendar, Wand2, Volume2 } from 'lucide-react';
+import { Calendar, Wand2, Volume2 } from 'lucide-react';
 import { AISettingsDialog } from './AISettings';
 import { TTSSettingsDialog } from './TTSSettings';
 
@@ -28,12 +28,6 @@ export function Header() {
             onClick={() => setShowTTSSettings(true)}
           >
             <Volume2 className="w-4 h-4 text-accent-blue" />
-          </button>
-          <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="Search">
-            <Search className="w-4 h-4 text-ink-secondary" />
-          </button>
-          <button className="p-2 rounded-lg hover:bg-white/40 transition-colors" title="Settings">
-            <Settings className="w-4 h-4 text-ink-secondary" />
           </button>
         </div>
       </header>

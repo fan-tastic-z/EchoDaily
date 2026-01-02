@@ -439,6 +439,21 @@ async fn list_entries_by_mood(
     Ok(entries)
 }
 
+/// Search entries by full-text query
+#[tauri::command]
+async fn search_entries(
+    query: String,
+    pool: tauri::State<'_, SqlitePool>,
+) -> Result<Vec<DiaryEntry>, AppError> {
+    // Validate query is not empty
+    let query = query.trim();
+    if query.is_empty() {
+        return Ok(vec![]);
+    }
+    let entries = db::queries::search_entries(&pool, query).await?;
+    Ok(entries)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -466,6 +481,7 @@ pub fn run() {
             get_tts_settings,
             upsert_entry_mood,
             list_entries_by_mood,
+            search_entries,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

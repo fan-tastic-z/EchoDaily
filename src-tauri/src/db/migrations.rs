@@ -66,6 +66,40 @@ ALTER TABLE entries ADD COLUMN mood_emoji TEXT;
 CREATE INDEX IF NOT EXISTS idx_entries_mood ON entries(mood);
 "#;
 
+// Migration: add full-text search
+const MIGRATION_005: &str = r#"
+-- Create FTS5 virtual table for full-text search
+-- Using simpler schema without external content table
+CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(
+    entry_id UNINDEXED,
+    content,
+    mood
+);
+
+-- Populate FTS table with existing entries
+INSERT INTO entries_fts(entry_id, content, mood)
+SELECT id, content_json, COALESCE(mood, '') FROM entries;
+
+-- Create triggers to keep FTS index in sync
+-- Trigger for INSERT
+CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN
+    INSERT INTO entries_fts(entry_id, content, mood)
+    VALUES (NEW.id, NEW.content_json, COALESCE(NEW.mood, ''));
+END;
+
+-- Trigger for DELETE
+CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN
+    DELETE FROM entries_fts WHERE entry_id = OLD.id;
+END;
+
+-- Trigger for UPDATE
+CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN
+    DELETE FROM entries_fts WHERE entry_id = OLD.id;
+    INSERT INTO entries_fts(entry_id, content, mood)
+    VALUES (NEW.id, NEW.content_json, COALESCE(NEW.mood, ''));
+END;
+"#;
+
 
 pub async fn run(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     let mut conn = pool.begin().await?;
@@ -127,6 +161,17 @@ pub async fn run(pool: &SqlitePool) -> Result<(), sqlx::Error> {
         let now = chrono::Utc::now().timestamp_millis();
         sqlx::query("INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)")
             .bind(4_i64)
+            .bind(now)
+            .execute(&mut *conn)
+            .await?;
+    }
+
+    if current_version < 5 {
+        conn.execute(MIGRATION_005).await?;
+
+        let now = chrono::Utc::now().timestamp_millis();
+        sqlx::query("INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)")
+            .bind(5_i64)
             .bind(now)
             .execute(&mut *conn)
             .await?;

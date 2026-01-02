@@ -134,3 +134,10 @@ export async function listEntriesByMood(
   return invoke('list_entries_by_mood', { month, mood });
 }
 
+// ===== Search API =====
+
+// Search entries by full-text query
+export async function searchEntries(query: string): Promise<DiaryEntry[]> {
+  return invoke('search_entries', { query });
+}
+

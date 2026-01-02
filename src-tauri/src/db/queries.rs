@@ -284,3 +284,25 @@ pub async fn list_entries_by_mood(
 
     Ok(entries)
 }
+
+// ===== Full-Text Search =====
+
+/// Search entries by full-text query
+/// Returns entries matching the search query, ordered by relevance
+pub async fn search_entries(
+    pool: &SqlitePool,
+    query: &str,
+) -> Result<Vec<DiaryEntry>, AppError> {
+    // Use FTS5 to search, then join with entries table to get full entry data
+    let entries = sqlx::query_as::<_, DiaryEntry>(
+        "SELECT e.* FROM entries e
+         INNER JOIN entries_fts fts ON e.id = fts.entry_id
+         WHERE entries_fts MATCH ?
+         ORDER BY bm25(entries_fts) DESC, e.entry_date DESC"
+    )
+    .bind(query)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(entries)
+}
