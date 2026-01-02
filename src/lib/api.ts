@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { DiaryEntry, AIOperation, AISettings, TTSVoice, TTSSettings, TTSResponse } from '../types';
+import type { DiaryEntry, AIOperation, AISettings, TTSVoice, TTSSettings, TTSResponse, WritingStats } from '../types';
 
 // Initialize the database (kept for compatibility; backend initializes on startup)
 export async function initDb(): Promise<void> {
@@ -139,5 +139,12 @@ export async function listEntriesByMood(
 // Search entries by full-text query
 export async function searchEntries(query: string): Promise<DiaryEntry[]> {
   return invoke('search_entries', { query });
+}
+
+// ===== Statistics API =====
+
+// Get writing statistics
+export async function getWritingStats(): Promise<WritingStats> {
+  return invoke('get_writing_stats');
 }
 

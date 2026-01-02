@@ -66,3 +66,10 @@ impl AIOpType {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WritingStats {
+    pub total_entries: i64,
+    pub current_streak: i64,
+    pub longest_streak: i64,
+}
+

@@ -104,3 +104,12 @@ export const MOOD_OPTIONS: MoodOption[] = [
   { type: 'awful', emoji: '😭', label: 'Awful' },
 ];
 
+// ===== Statistics Types =====
+
+// Writing statistics
+export interface WritingStats {
+  total_entries: number;
+  current_streak: number;
+  longest_streak: number;
+}
+

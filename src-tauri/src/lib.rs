@@ -5,7 +5,7 @@ mod ai;
 mod keychain;
 mod tts;
 
-use models::{DiaryEntry, AIOperation};
+use models::{DiaryEntry, AIOperation, WritingStats};
 use error::AppError;
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -454,6 +454,14 @@ async fn search_entries(
     Ok(entries)
 }
 
+/// Get writing statistics
+#[tauri::command]
+async fn get_writing_stats(
+    pool: tauri::State<'_, SqlitePool>,
+) -> Result<WritingStats, AppError> {
+    db::queries::get_writing_stats(&pool).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -482,6 +490,7 @@ pub fn run() {
             upsert_entry_mood,
             list_entries_by_mood,
             search_entries,
+            get_writing_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

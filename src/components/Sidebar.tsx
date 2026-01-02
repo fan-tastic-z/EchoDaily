@@ -1,10 +1,10 @@
-import { ChevronLeft, ChevronRight, Sparkles, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, Search, X, BookOpen, Flame, TrendingUp } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { addMonths, format, getDaysInMonth } from 'date-fns';
 import { useEffect, useState } from 'react';
-import { listEntries, searchEntries } from '../lib/api';
+import { listEntries, searchEntries, getWritingStats } from '../lib/api';
 import { MOOD_OPTIONS } from '../types';
-import type { DiaryEntry } from '../types';
+import type { DiaryEntry, WritingStats } from '../types';
 
 // Mood colors for calendar badges
 const MOOD_COLORS = {
@@ -21,6 +21,8 @@ export function Sidebar() {
   const [searchResults, setSearchResults] = useState<DiaryEntry[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [stats, setStats] = useState<WritingStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Load entries for the current month
   useEffect(() => {
@@ -60,6 +62,22 @@ export function Sidebar() {
     const timeoutId = setTimeout(handleSearch, 300);
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
+
+  // Load writing statistics
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await getWritingStats();
+        setStats(data);
+      } catch (error) {
+        console.error('Failed to load writing stats:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    loadStats();
+  }, []);
 
   const [year, month] = currentMonth.split('-').map((part) => Number(part));
   const monthStart = new Date(year, month - 1, 1);
@@ -290,6 +308,48 @@ export function Sidebar() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Writing Statistics */}
+        {!statsLoading && stats && (
+          <div className="mt-4 pt-4 border-t border-stone-200/60">
+            <div className="flex items-center gap-1.5 text-xs text-stone-500 mb-2">
+              <TrendingUp className="w-3 h-3" />
+              <span className="font-medium">Writing Stats</span>
+            </div>
+            <div className="space-y-2">
+              {/* Total Entries */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-white/60 rounded-lg">
+                <BookOpen className="w-4 h-4 text-accent-blue" />
+                <div className="flex-1">
+                  <div className="text-xs text-stone-500">Total Entries</div>
+                  <div className="text-lg font-semibold text-stone-800">{stats.total_entries}</div>
+                </div>
+              </div>
+
+              {/* Current Streak */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200">
+                <Flame className="w-4 h-4 text-orange-500" />
+                <div className="flex-1">
+                  <div className="text-xs text-stone-500">Current Streak</div>
+                  <div className="text-lg font-semibold text-orange-700">
+                    {stats.current_streak} {stats.current_streak === 1 ? 'day' : 'days'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Longest Streak */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-white/60 rounded-lg">
+                <TrendingUp className="w-4 h-4 text-green-600" />
+                <div className="flex-1">
+                  <div className="text-xs text-stone-500">Longest Streak</div>
+                  <div className="text-lg font-semibold text-stone-800">
+                    {stats.longest_streak} {stats.longest_streak === 1 ? 'day' : 'days'}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

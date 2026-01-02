@@ -1,6 +1,6 @@
-use sqlx::{SqlitePool, Row};
+use sqlx::SqlitePool;
 use uuid::Uuid;
-use crate::models::{DiaryEntry, AIOperation};
+use crate::models::{DiaryEntry, AIOperation, WritingStats};
 use crate::error::AppError;
 use serde_json::json;
 
@@ -305,4 +305,91 @@ pub async fn search_entries(
     .await?;
 
     Ok(entries)
+}
+
+// ===== Statistics =====
+
+/// Get writing statistics
+pub async fn get_writing_stats(
+    pool: &SqlitePool,
+) -> Result<WritingStats, AppError> {
+    // Get total entry count
+    let total_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM entries")
+        .fetch_one(pool)
+        .await?;
+
+    // Get all entry dates sorted
+    let dates: Vec<String> = sqlx::query_scalar("SELECT entry_date FROM entries ORDER BY entry_date ASC")
+        .fetch_all(pool)
+        .await?;
+
+    // Calculate current streak (consecutive days ending today or before)
+    let current_streak = calculate_current_streak(&dates);
+
+    // Calculate longest streak
+    let longest_streak = calculate_longest_streak(&dates);
+
+    Ok(WritingStats {
+        total_entries: total_count,
+        current_streak,
+        longest_streak,
+    })
+}
+
+/// Calculate the current streak of consecutive days
+fn calculate_current_streak(dates: &[String]) -> i64 {
+    if dates.is_empty() {
+        return 0;
+    }
+
+    let today = chrono::Utc::now().date_naive();
+    let mut streak_count: i64 = 0;
+    let mut check_date = today;
+
+    for date_str in dates.iter().rev() {
+        if let Ok(entry_date) = chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+            if entry_date == check_date {
+                streak_count += 1;
+                check_date = check_date - chrono::Duration::days(1);
+            } else if entry_date < check_date {
+                // Gap found, stop counting
+                break;
+            } else {
+                // Future date, skip
+                continue;
+            }
+        }
+    }
+
+    streak_count
+}
+
+/// Calculate the longest streak of consecutive days
+fn calculate_longest_streak(dates: &[String]) -> i64 {
+    if dates.is_empty() {
+        return 0;
+    }
+
+    let mut longest_streak: i64 = 0;
+    let mut current_streak: i64 = 0;
+    let mut prev_date: Option<chrono::NaiveDate> = None;
+
+    for date_str in dates {
+        if let Ok(entry_date) = chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+            if let Some(prev) = prev_date {
+                let diff = (entry_date - prev).num_days();
+                if diff == 1 {
+                    current_streak += 1;
+                } else {
+                    longest_streak = longest_streak.max(current_streak);
+                    current_streak = 1;
+                }
+            } else {
+                current_streak = 1;
+            }
+            prev_date = Some(entry_date);
+        }
+    }
+
+    longest_streak.max(current_streak)
 }
