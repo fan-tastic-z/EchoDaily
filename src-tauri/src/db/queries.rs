@@ -1,6 +1,6 @@
 use sqlx::SqlitePool;
 use uuid::Uuid;
-use crate::models::{DiaryEntry, AIOperation, WritingStats};
+use crate::models::{DiaryEntry, AIOperation, WritingStats, ExportData, ImportOptions};
 use crate::error::AppError;
 use serde_json::json;
 
@@ -392,4 +392,124 @@ fn calculate_longest_streak(dates: &[String]) -> i64 {
     }
 
     longest_streak.max(current_streak)
+}
+
+// ===== Export/Import =====
+
+/// Export all user data (entries and AI operations)
+pub async fn export_all_data(
+    pool: &SqlitePool,
+) -> Result<ExportData, AppError> {
+    // Get all entries
+    let entries = sqlx::query_as::<_, DiaryEntry>(
+        "SELECT * FROM entries ORDER BY entry_date ASC"
+    )
+    .fetch_all(pool)
+    .await?;
+
+    // Get all AI operations
+    let ai_operations = sqlx::query_as::<_, AIOperation>(
+        "SELECT * FROM ai_operations ORDER BY created_at ASC"
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(ExportData {
+        version: "1.0".to_string(),
+        exported_at: chrono::Utc::now().timestamp_millis(),
+        entries,
+        ai_operations,
+    })
+}
+
+/// Import user data from export JSON
+pub async fn import_data(
+    pool: &SqlitePool,
+    data: ExportData,
+    options: ImportOptions,
+) -> Result<usize, AppError> {
+    let mut imported_count = 0;
+
+    // Import entries
+    for entry in data.entries {
+        // Check if entry exists
+        let existing = sqlx::query_scalar::<_, String>(
+            "SELECT id FROM entries WHERE entry_date = ?"
+        )
+        .bind(&entry.entry_date)
+        .fetch_optional(pool)
+        .await?;
+
+        match (existing, options.overwrite) {
+            (None, _) => {
+                // Insert new entry
+                sqlx::query(
+                    "INSERT INTO entries (id, entry_date, content_json, mood, mood_emoji, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)"
+                )
+                .bind(&entry.id)
+                .bind(&entry.entry_date)
+                .bind(&entry.content_json)
+                .bind(&entry.mood)
+                .bind(&entry.mood_emoji)
+                .bind(entry.created_at)
+                .bind(entry.updated_at)
+                .execute(pool)
+                .await?;
+                imported_count += 1;
+            }
+            (Some(_), true) => {
+                // Update existing entry
+                sqlx::query(
+                    "UPDATE entries SET content_json = ?, mood = ?, mood_emoji = ?, updated_at = ?
+                     WHERE entry_date = ?"
+                )
+                .bind(&entry.content_json)
+                .bind(&entry.mood)
+                .bind(&entry.mood_emoji)
+                .bind(entry.updated_at)
+                .bind(&entry.entry_date)
+                .execute(pool)
+                .await?;
+                imported_count += 1;
+            }
+            (Some(_), false) => {
+                // Skip existing entry
+                continue;
+            }
+        }
+    }
+
+    // Import AI operations if requested
+    if options.include_ai_operations {
+        for op in data.ai_operations {
+            // Check if AI operation exists
+            let existing = sqlx::query_scalar::<_, String>(
+                "SELECT id FROM ai_operations WHERE id = ?"
+            )
+            .bind(&op.id)
+            .fetch_optional(pool)
+            .await?;
+
+            if existing.is_none() {
+                // Only insert if doesn't exist
+                sqlx::query(
+                    "INSERT INTO ai_operations (id, entry_id, op_type, original_text, result_text, provider, model, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                )
+                .bind(&op.id)
+                .bind(&op.entry_id)
+                .bind(&op.op_type)
+                .bind(&op.original_text)
+                .bind(&op.result_text)
+                .bind(&op.provider)
+                .bind(&op.model)
+                .bind(op.created_at)
+                .execute(pool)
+                .await?;
+            }
+        }
+    }
+
+    Ok(imported_count)
 }

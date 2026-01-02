@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Calendar, Wand2, Volume2 } from 'lucide-react';
+import { Calendar, Wand2, Volume2, Database } from 'lucide-react';
 import { AISettingsDialog } from './AISettings';
 import { TTSSettingsDialog } from './TTSSettings';
+import { DataSettingsDialog } from './DataSettings';
 
 export function Header() {
   const [showAISettings, setShowAISettings] = useState(false);
   const [showTTSSettings, setShowTTSSettings] = useState(false);
+  const [showDataSettings, setShowDataSettings] = useState(false);
 
   return (
     <>
@@ -29,11 +31,19 @@ export function Header() {
           >
             <Volume2 className="w-4 h-4 text-accent-blue" />
           </button>
+          <button
+            className="p-2 rounded-lg hover:bg-white/40 transition-colors"
+            title="Data Management"
+            onClick={() => setShowDataSettings(true)}
+          >
+            <Database className="w-4 h-4 text-accent-blue" />
+          </button>
         </div>
       </header>
 
       <AISettingsDialog isOpen={showAISettings} onClose={() => setShowAISettings(false)} />
       <TTSSettingsDialog isOpen={showTTSSettings} onClose={() => setShowTTSSettings(false)} />
+      <DataSettingsDialog isOpen={showDataSettings} onClose={() => setShowDataSettings(false)} />
     </>
   );
 }

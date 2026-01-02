@@ -113,3 +113,19 @@ export interface WritingStats {
   longest_streak: number;
 }
 
+// ===== Export/Import Types =====
+
+// Export data structure containing all user data
+export interface ExportData {
+  version: string;
+  exported_at: number;
+  entries: DiaryEntry[];
+  ai_operations: AIOperation[];
+}
+
+// Import options
+export interface ImportOptions {
+  overwrite: boolean;
+  include_ai_operations: boolean;
+}
+

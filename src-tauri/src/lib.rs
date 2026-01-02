@@ -5,7 +5,7 @@ mod ai;
 mod keychain;
 mod tts;
 
-use models::{DiaryEntry, AIOperation, WritingStats};
+use models::{DiaryEntry, AIOperation, WritingStats, ExportData, ImportOptions};
 use error::AppError;
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -462,11 +462,39 @@ async fn get_writing_stats(
     db::queries::get_writing_stats(&pool).await
 }
 
+// ===== Export/Import Operations =====
+
+/// Export all user data as JSON
+#[tauri::command]
+async fn export_data(
+    pool: tauri::State<'_, SqlitePool>,
+) -> Result<String, AppError> {
+    let data = db::queries::export_all_data(&pool).await?;
+    let json = serde_json::to_string_pretty(&data)?;
+    Ok(json)
+}
+
+/// Import user data from JSON
+#[tauri::command]
+async fn import_data(
+    json_data: String,
+    options: ImportOptions,
+    pool: tauri::State<'_, SqlitePool>,
+) -> Result<usize, AppError> {
+    let data: ExportData = serde_json::from_str(&json_data)?;
+
+    let count = db::queries::import_data(&pool, data, options).await?;
+
+    // Reload month entries if they were affected
+    Ok(count)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let pool = tauri::async_runtime::block_on(db::get_pool(app.handle()))?;
             app.manage(pool);
@@ -491,6 +519,8 @@ pub fn run() {
             list_entries_by_mood,
             search_entries,
             get_writing_stats,
+            export_data,
+            import_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

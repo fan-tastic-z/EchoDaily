@@ -73,3 +73,22 @@ pub struct WritingStats {
     pub longest_streak: i64,
 }
 
+// ===== Export/Import Types =====
+
+/// Export data structure containing all user data
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ExportData {
+    pub version: String,
+    pub exported_at: i64,
+    pub entries: Vec<DiaryEntry>,
+    pub ai_operations: Vec<AIOperation>,
+}
+
+/// Import options
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ImportOptions {
+    /// Whether to overwrite existing entries
+    pub overwrite: bool,
+    /// Whether to import AI operations
+    pub include_ai_operations: bool,
+}
