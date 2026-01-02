@@ -1,4 +1,4 @@
-use super::provider::{AIProvider, AIRequest, AIResponse, AIError};
+use super::provider::{AIError, AIProvider, AIRequest, AIResponse};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -84,7 +84,11 @@ impl ZhipuProvider {
             "translate" => {
                 // Detect if text contains Chinese characters
                 let has_chinese = text.chars().any(|c| c >= '\u{4E00}' && c <= '\u{9FFF}');
-                let target_lang = if has_chinese { "English" } else { "Chinese (Simplified)" };
+                let target_lang = if has_chinese {
+                    "English"
+                } else {
+                    "Chinese (Simplified)"
+                };
 
                 format!(
                     "Translate the following text to {}. Only output the translation without explanation.\n\n{}",
@@ -146,7 +150,10 @@ impl ZhipuProvider {
                     _ => AIError::ProviderError(err_resp.error.message),
                 });
             }
-            return Err(AIError::HttpError(format!("Status {}: {}", status, response_text)));
+            return Err(AIError::HttpError(format!(
+                "Status {}: {}",
+                status, response_text
+            )));
         }
 
         serde_json::from_str(&response_text)

@@ -1,11 +1,12 @@
-use super::provider::{TTSProvider, TTSRequest, TTSResponse, TTSError, TTSVoice};
+use super::provider::{TTSError, TTSProvider, TTSRequest, TTSResponse, TTSVoice};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 // Correct API endpoint for Qwen-TTS
-const API_BASE: &str = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
+const API_BASE: &str =
+    "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 const MAX_TEXT_LENGTH: usize = 600; // Qwen3-TTS-Flash 限制 600 字符
 
 pub struct QwenTTSProvider {
@@ -58,20 +59,18 @@ impl QwenTTSProvider {
             .build()
             .unwrap_or_else(|_| Client::new());
 
-        Self {
-            api_key,
-            client,
-        }
+        Self { api_key, client }
     }
 
     fn get_api_key(&self) -> Result<String, TTSError> {
-        self.api_key
-            .clone()
-            .ok_or(TTSError::NoApiKey)
+        self.api_key.clone().ok_or(TTSError::NoApiKey)
     }
 
     // Map language and voice to Qwen TTS format
-    fn select_voice_and_language(language: Option<&str>, voice: Option<&str>) -> (String, Option<String>) {
+    fn select_voice_and_language(
+        language: Option<&str>,
+        voice: Option<&str>,
+    ) -> (String, Option<String>) {
         // If voice is specified, use it
         if let Some(v) = voice {
             // Map voice IDs (lowercase from frontend) to Qwen voice names (capitalized for API)
@@ -95,7 +94,9 @@ impl QwenTTSProvider {
         // Default voice selection based on language
         match language {
             Some("en") | Some("en-US") => ("Ethan".to_string(), Some("English".to_string())),
-            Some("zh") | Some("zh-CN") | None => ("Cherry".to_string(), Some("Chinese".to_string())),
+            Some("zh") | Some("zh-CN") | None => {
+                ("Cherry".to_string(), Some("Chinese".to_string()))
+            }
             Some("ja") | Some("ja-JP") => ("Ethan".to_string(), Some("Japanese".to_string())),
             Some("ko") | Some("ko-KR") => ("Ethan".to_string(), Some("Korean".to_string())),
             _ => ("Cherry".to_string(), Some("Chinese".to_string())),
@@ -114,12 +115,7 @@ impl TTSProvider for QwenTTSProvider {
     }
 
     fn is_configured(&self) -> bool {
-        self.api_key
-            .is_some()
-            || crate::keychain::get_tts_api_key()
-                .ok()
-                .flatten()
-                .is_some()
+        self.api_key.is_some() || crate::keychain::get_tts_api_key().ok().flatten().is_some()
     }
 
     async fn synthesize(&self, request: TTSRequest) -> Result<TTSResponse, TTSError> {
@@ -131,10 +127,8 @@ impl TTSProvider for QwenTTSProvider {
         let api_key = self.get_api_key()?;
 
         // Select voice and language
-        let (voice, language_type) = Self::select_voice_and_language(
-            request.language.as_deref(),
-            request.voice.as_deref(),
-        );
+        let (voice, language_type) =
+            Self::select_voice_and_language(request.language.as_deref(), request.voice.as_deref());
 
         // Build request according to Qwen-TTS API format
         // Note: Qwen TTS API does not support rate/speed parameter
@@ -190,9 +184,8 @@ impl TTSProvider for QwenTTSProvider {
             )));
         }
 
-        let qwen_response: QwenTTSResponse = serde_json::from_str(&body).map_err(|e| {
-            TTSError::Unknown(format!("Invalid response format: {}", e))
-        })?;
+        let qwen_response: QwenTTSResponse = serde_json::from_str(&body)
+            .map_err(|e| TTSError::Unknown(format!("Invalid response format: {}", e)))?;
 
         // Extract audio URL
         let audio_url = qwen_response
@@ -204,15 +197,10 @@ impl TTSProvider for QwenTTSProvider {
         // Download from URL (Qwen always returns URL, not base64)
         let audio_bytes = if let Some(url) = &audio_url {
             eprintln!("TTS: Downloading from URL: {}", url);
-            let audio_response = self
-                .client
-                .get(url)
-                .send()
-                .await
-                .map_err(|e| {
-                    eprintln!("TTS: Failed to download audio: {}", e);
-                    TTSError::NetworkError(format!("Failed to download audio: {}", e))
-                })?;
+            let audio_response = self.client.get(url).send().await.map_err(|e| {
+                eprintln!("TTS: Failed to download audio: {}", e);
+                TTSError::NetworkError(format!("Failed to download audio: {}", e))
+            })?;
 
             eprintln!("TTS: Got response, status: {}", audio_response.status());
             if !audio_response.status().is_success() {
@@ -222,13 +210,10 @@ impl TTSProvider for QwenTTSProvider {
                 )));
             }
 
-            let bytes = audio_response
-                .bytes()
-                .await
-                .map_err(|e| {
-                    eprintln!("TTS: Failed to read audio bytes: {}", e);
-                    TTSError::NetworkError(format!("Failed to read audio: {}", e))
-                })?;
+            let bytes = audio_response.bytes().await.map_err(|e| {
+                eprintln!("TTS: Failed to read audio bytes: {}", e);
+                TTSError::NetworkError(format!("Failed to read audio: {}", e))
+            })?;
 
             eprintln!("TTS: Downloaded {} bytes", bytes.len());
             Some(bytes.to_vec())
@@ -244,7 +229,7 @@ impl TTSProvider for QwenTTSProvider {
             eprintln!("TTS: Returning response with audio bytes");
             Ok(TTSResponse {
                 audio_bytes,
-                audio_file: None, // Will be set by Tauri command
+                audio_file: None,   // Will be set by Tauri command
                 audio_base64: None, // Will be set by Tauri command
                 format,
                 duration_ms: None,

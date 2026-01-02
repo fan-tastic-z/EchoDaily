@@ -1,16 +1,15 @@
-mod models;
-mod error;
-mod db;
 mod ai;
+mod db;
+mod error;
 mod keychain;
+mod models;
 mod tts;
 
-use models::{DiaryEntry, AIOperation, WritingStats, ExportData, ImportOptions};
-use error::AppError;
-use sqlx::SqlitePool;
-use std::sync::Arc;
-use tauri::Manager;
 use base64::prelude::*;
+use error::AppError;
+use models::{AIOperation, DiaryEntry, ExportData, ImportOptions, WritingStats};
+use sqlx::SqlitePool;
+use tauri::Manager;
 
 use ai::AIProvider; // Import the trait
 
@@ -102,11 +101,13 @@ async fn ai_polish(
     validate_entry_date(&entry_date)?;
 
     // Get the entry first to have its ID
-    let entry = db::queries::get_entry(&pool, &entry_date).await?
-        .ok_or(AppError::EntryNotFound(format!(
-            "Entry for {} does not exist. Please write and save some content first.",
-            entry_date
-        )))?;
+    let entry =
+        db::queries::get_entry(&pool, &entry_date)
+            .await?
+            .ok_or(AppError::EntryNotFound(format!(
+                "Entry for {} does not exist. Please write and save some content first.",
+                entry_date
+            )))?;
 
     let api_key = keychain::get_api_key()?
         .ok_or(AppError::AI("API key not configured. Please click the wand icon in the header to configure your Zhipu AI API key.".to_string()))?;
@@ -132,15 +133,14 @@ async fn ai_polish(
         &response.result,
         &response.provider,
         &response.model,
-    ).await?;
+    )
+    .await?;
 
     Ok(operation)
 }
 
 #[tauri::command]
-async fn save_ai_settings(
-    settings: ai::AISettings,
-) -> Result<(), AppError> {
+async fn save_ai_settings(settings: ai::AISettings) -> Result<(), AppError> {
     let api_key = settings.api_key.trim();
     if api_key.is_empty() {
         keychain::delete_api_key()?;
@@ -193,49 +193,53 @@ async fn text_to_speech(
     println!("TTS: Command invoked, text length: {}", text.len());
 
     // Get TTS settings from database to read configured provider, voice and speed
-    let (configured_provider, configured_voice, configured_speed) = if let Some(config_json) = db::queries::get_setting(&pool, "tts_config").await? {
-        let config: serde_json::Value = serde_json::from_str(&config_json)?;
-        let provider_str = config["provider"].as_str().unwrap_or("qwen");
-        let speed = config["speed"].as_f64().unwrap_or(1.0) as f32;
+    let (configured_provider, configured_voice, configured_speed) =
+        if let Some(config_json) = db::queries::get_setting(&pool, "tts_config").await? {
+            let config: serde_json::Value = serde_json::from_str(&config_json)?;
+            let provider_str = config["provider"].as_str().unwrap_or("qwen");
+            let speed = config["speed"].as_f64().unwrap_or(1.0) as f32;
 
-        // Use default voice if not configured
-        let voice = config["voice"].as_str().map(|s| s.to_string());
-        let voice = if voice.is_some() && voice.as_ref().unwrap().is_empty() {
-            None
+            // Use default voice if not configured
+            let voice = config["voice"].as_str().map(|s| s.to_string());
+            let voice = if voice.is_some() && voice.as_ref().unwrap().is_empty() {
+                None
+            } else {
+                voice
+            };
+
+            println!(
+                "TTS: Loaded from database - provider: {}, voice: {:?}, speed: {}",
+                provider_str, voice, speed
+            );
+            (provider_str.to_string(), voice, speed)
         } else {
-            voice
+            println!("TTS: No config in database, using defaults");
+            ("qwen".to_string(), Some("cherry".to_string()), 1.0)
         };
-
-        println!("TTS: Loaded from database - provider: {}, voice: {:?}, speed: {}", provider_str, voice, speed);
-        (provider_str.to_string(), voice, speed)
-    } else {
-        println!("TTS: No config in database, using defaults");
-        ("qwen".to_string(), Some("cherry".to_string()), 1.0)
-    };
 
     // Use provider from parameter if specified, otherwise use configured provider
     let provider_str = provider.unwrap_or(configured_provider);
-    let provider_type = tts::TTSProviderType::from_str(&provider_str)
-        .unwrap_or(tts::TTSProviderType::Qwen);
+    let provider_type =
+        tts::TTSProviderType::from_str(&provider_str).unwrap_or(tts::TTSProviderType::Qwen);
 
     println!("TTS: Using provider: {:?}", provider_type);
 
     // Get the provider with API key
-    let tts_provider = tts::get_provider(provider_type).await
-        .map_err(|e| {
-            println!("TTS: Failed to get provider: {}", e);
-            AppError::TTS(e.to_string())
-        })?;
+    let tts_provider = tts::get_provider(provider_type).await.map_err(|e| {
+        println!("TTS: Failed to get provider: {}", e);
+        AppError::TTS(e.to_string())
+    })?;
 
     // Use default voice based on provider if not configured
-    let final_voice = configured_voice.or_else(|| {
-        match provider_type {
-            tts::TTSProviderType::Qwen => Some("cherry".to_string()),
-            tts::TTSProviderType::Murf => Some("en-US-natalie".to_string()),
-        }
+    let final_voice = configured_voice.or_else(|| match provider_type {
+        tts::TTSProviderType::Qwen => Some("cherry".to_string()),
+        tts::TTSProviderType::Murf => Some("en-US-natalie".to_string()),
     });
 
-    println!("TTS: Provider created, building request with voice: {:?}", final_voice);
+    println!(
+        "TTS: Provider created, building request with voice: {:?}",
+        final_voice
+    );
     let request = tts::TTSRequest {
         text,
         voice: final_voice,
@@ -245,11 +249,10 @@ async fn text_to_speech(
     };
 
     println!("TTS: Calling synthesize...");
-    let mut response = tts_provider.synthesize(request).await
-        .map_err(|e| {
-            println!("TTS: Synthesize error: {}", e);
-            AppError::TTS(e.to_string())
-        })?;
+    let mut response = tts_provider.synthesize(request).await.map_err(|e| {
+        println!("TTS: Synthesize error: {}", e);
+        AppError::TTS(e.to_string())
+    })?;
 
     // Save audio bytes to app data directory
     if let Some(bytes) = &response.audio_bytes {
@@ -263,21 +266,20 @@ async fn text_to_speech(
             println!("TTS: Saving large audio file to disk");
 
             // Get app data directory
-            let app_data_dir = app.path().app_data_dir()
-                .map_err(|e| {
-                    println!("TTS: Failed to get app data dir: {}", e);
-                    AppError::TTS(format!("Failed to get app data dir: {}", e))
-                })?;
+            let app_data_dir = app.path().app_data_dir().map_err(|e| {
+                println!("TTS: Failed to get app data dir: {}", e);
+                AppError::TTS(format!("Failed to get app data dir: {}", e))
+            })?;
 
             // Create directory if it doesn't exist
-            std::fs::create_dir_all(&app_data_dir)
-                .map_err(|e| {
-                    println!("TTS: Failed to create app data dir: {}", e);
-                    AppError::TTS(format!("Failed to create app data dir: {}", e))
-                })?;
+            std::fs::create_dir_all(&app_data_dir).map_err(|e| {
+                println!("TTS: Failed to create app data dir: {}", e);
+                AppError::TTS(format!("Failed to create app data dir: {}", e))
+            })?;
 
             // Generate unique filename
-            let file_name = format!("tts_{}.{}.{}",
+            let file_name = format!(
+                "tts_{}.{}.{}",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
@@ -288,11 +290,10 @@ async fn text_to_speech(
             let file_path = app_data_dir.join(&file_name);
 
             // Write audio bytes to file
-            std::fs::write(&file_path, bytes)
-                .map_err(|e| {
-                    println!("TTS: Failed to write audio file: {}", e);
-                    AppError::TTS(format!("Failed to write audio file: {}", e))
-                })?;
+            std::fs::write(&file_path, bytes).map_err(|e| {
+                println!("TTS: Failed to write audio file: {}", e);
+                AppError::TTS(format!("Failed to write audio file: {}", e))
+            })?;
 
             println!("TTS: Audio saved to: {}", file_path.display());
             response.audio_file = file_path.to_str().map(|s| s.to_string());
@@ -302,7 +303,8 @@ async fn text_to_speech(
         response.audio_bytes = None;
     }
 
-    println!("TTS: Got response, format: {}, has_file: {}, has_base64: {}",
+    println!(
+        "TTS: Got response, format: {}, has_file: {}, has_base64: {}",
         response.format,
         response.audio_file.is_some(),
         response.audio_base64.is_some()
@@ -318,8 +320,8 @@ async fn list_tts_voices(
 ) -> Result<Vec<tts::TTSVoice>, AppError> {
     // Get provider from parameter or use default
     let provider_str = provider.unwrap_or_else(|| "qwen".to_string());
-    let provider_type = tts::TTSProviderType::from_str(&provider_str)
-        .unwrap_or(tts::TTSProviderType::Qwen);
+    let provider_type =
+        tts::TTSProviderType::from_str(&provider_str).unwrap_or(tts::TTSProviderType::Qwen);
 
     // Use get_provider_no_auth since listing voices doesn't require API key
     let tts_provider = tts::get_provider_no_auth(provider_type);
@@ -361,18 +363,18 @@ async fn get_tts_settings(
     let provider_str = provider.unwrap_or_else(|| "qwen".to_string());
 
     // Get API key based on provider
-    let (api_key, default_model) = match provider_str.as_str() {
+    let (_api_key, default_model) = match provider_str.as_str() {
         "murf" => (
             keychain::get_murf_api_key()
                 .map_err(|e| AppError::TTS(e.to_string()))?
                 .ok_or_else(|| AppError::TTS("Murf API key not configured".to_string()))?,
-            "GEN2"
+            "GEN2",
         ),
         _ => (
             keychain::get_tts_api_key()
                 .map_err(|e| AppError::TTS(e.to_string()))?
                 .ok_or_else(|| AppError::TTS("API key not configured".to_string()))?,
-            "qwen3-tts-flash"
+            "qwen3-tts-flash",
         ),
     };
 
@@ -380,8 +382,14 @@ async fn get_tts_settings(
     let settings = if let Some(config_json) = db::queries::get_setting(&pool, "tts_config").await? {
         let config: serde_json::Value = serde_json::from_str(&config_json)?;
         tts::TTSSettings {
-            provider: config["provider"].as_str().unwrap_or(&provider_str).to_string(),
-            model: config["model"].as_str().unwrap_or(default_model).to_string(),
+            provider: config["provider"]
+                .as_str()
+                .unwrap_or(&provider_str)
+                .to_string(),
+            model: config["model"]
+                .as_str()
+                .unwrap_or(default_model)
+                .to_string(),
             api_key: "***".to_string(),
             voice: config["voice"].as_str().map(|s| s.to_string()),
             speed: config["speed"].as_f64().unwrap_or(1.0) as f32,
@@ -423,7 +431,9 @@ async fn upsert_entry_mood(
     pool: tauri::State<'_, SqlitePool>,
 ) -> Result<DiaryEntry, AppError> {
     validate_entry_date(&entry_date)?;
-    let entry = db::queries::upsert_entry_mood(&pool, &entry_date, mood.as_deref(), mood_emoji.as_deref()).await?;
+    let entry =
+        db::queries::upsert_entry_mood(&pool, &entry_date, mood.as_deref(), mood_emoji.as_deref())
+            .await?;
     Ok(entry)
 }
 
@@ -456,9 +466,7 @@ async fn search_entries(
 
 /// Get writing statistics
 #[tauri::command]
-async fn get_writing_stats(
-    pool: tauri::State<'_, SqlitePool>,
-) -> Result<WritingStats, AppError> {
+async fn get_writing_stats(pool: tauri::State<'_, SqlitePool>) -> Result<WritingStats, AppError> {
     db::queries::get_writing_stats(&pool).await
 }
 
@@ -466,9 +474,7 @@ async fn get_writing_stats(
 
 /// Export all user data as JSON
 #[tauri::command]
-async fn export_data(
-    pool: tauri::State<'_, SqlitePool>,
-) -> Result<String, AppError> {
+async fn export_data(pool: tauri::State<'_, SqlitePool>) -> Result<String, AppError> {
     let data = db::queries::export_all_data(&pool).await?;
     let json = serde_json::to_string_pretty(&data)?;
     Ok(json)

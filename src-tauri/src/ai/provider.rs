@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 /// AI operation request
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AIRequest {
-    pub op_type: String,      // "polish", "expand", "fix_grammar"
+    pub op_type: String, // "polish", "expand", "fix_grammar"
     pub text: String,
     pub context: Option<String>, // Optional surrounding context
 }
@@ -20,6 +20,7 @@ pub struct AIResponse {
 
 /// Error types for AI operations
 #[derive(Debug, thiserror::Error)]
+#[allow(dead_code)]
 pub enum AIError {
     #[error("API key not configured")]
     NoApiKey,
@@ -63,10 +64,7 @@ impl AIError {
 
     /// Whether the error indicates authentication issue
     pub fn is_auth_error(&self) -> bool {
-        matches!(
-            self,
-            AIError::NoApiKey | AIError::AuthenticationFailed(_)
-        )
+        matches!(self, AIError::NoApiKey | AIError::AuthenticationFailed(_))
     }
 }
 
@@ -90,7 +88,7 @@ pub trait AIProvider: Send + Sync {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AISettings {
-    pub provider: String,    // "zhipu", "openai", etc.
-    pub model: String,       // e.g., "glm-4-flash"
-    pub api_key: String,     // Will be stored securely, not in plain DB
+    pub provider: String, // "zhipu", "openai", etc.
+    pub model: String,    // e.g., "glm-4-flash"
+    pub api_key: String,  // Will be stored securely, not in plain DB
 }

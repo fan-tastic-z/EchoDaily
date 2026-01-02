@@ -4,13 +4,13 @@ use sqlx::FromRow;
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct DiaryEntry {
     pub id: String,
-    pub entry_date: String,        // YYYY-MM-DD
+    pub entry_date: String, // YYYY-MM-DD
     pub content_json: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mood: Option<String>,       // Mood category: amazing, happy, neutral, sad, awful
+    pub mood: Option<String>, // Mood category: amazing, happy, neutral, sad, awful
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mood_emoji: Option<String>, // Emoji representation: 😄, 😊, 😐, 😢, 😭
-    pub created_at: i64,           // unix timestamp ms
+    pub created_at: i64, // unix timestamp ms
     pub updated_at: i64,
 }
 
@@ -29,11 +29,11 @@ pub struct UpdateEntry {
 pub struct AIOperation {
     pub id: String,
     pub entry_id: String,
-    pub op_type: String,           // "polish", "expand", "fix_grammar"
+    pub op_type: String, // "polish", "expand", "fix_grammar"
     pub original_text: String,
     pub result_text: String,
-    pub provider: String,          // "zhipu", "openai", etc.
-    pub model: String,             // e.g., "glm-4-flash"
+    pub provider: String, // "zhipu", "openai", etc.
+    pub model: String,    // e.g., "glm-4-flash"
     pub created_at: i64,
 }
 

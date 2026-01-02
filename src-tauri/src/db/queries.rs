@@ -1,8 +1,8 @@
+use crate::error::AppError;
+use crate::models::{AIOperation, DiaryEntry, ExportData, ImportOptions, WritingStats};
+use serde_json::json;
 use sqlx::SqlitePool;
 use uuid::Uuid;
-use crate::models::{DiaryEntry, AIOperation, WritingStats, ExportData, ImportOptions};
-use crate::error::AppError;
-use serde_json::json;
 
 pub async fn upsert_entry(
     pool: &SqlitePool,
@@ -16,7 +16,7 @@ pub async fn upsert_entry(
         "UPDATE entries 
          SET content_json = ?, updated_at = ? 
          WHERE entry_date = ? 
-         RETURNING *"
+         RETURNING *",
     )
     .bind(content_json)
     .bind(now)
@@ -61,12 +61,10 @@ pub async fn get_entry(
     pool: &SqlitePool,
     entry_date: &str,
 ) -> Result<Option<DiaryEntry>, AppError> {
-    let entry = sqlx::query_as::<_, DiaryEntry>(
-        "SELECT * FROM entries WHERE entry_date = ?"
-    )
-    .bind(entry_date)
-    .fetch_optional(pool)
-    .await?;
+    let entry = sqlx::query_as::<_, DiaryEntry>("SELECT * FROM entries WHERE entry_date = ?")
+        .bind(entry_date)
+        .fetch_optional(pool)
+        .await?;
 
     Ok(entry)
 }
@@ -78,7 +76,7 @@ pub async fn list_entries(
     let entries = sqlx::query_as::<_, DiaryEntry>(
         "SELECT * FROM entries 
          WHERE entry_date LIKE ? 
-         ORDER BY entry_date DESC"
+         ORDER BY entry_date DESC",
     )
     .bind(format!("{}%", month))
     .fetch_all(pool)
@@ -87,10 +85,7 @@ pub async fn list_entries(
     Ok(entries)
 }
 
-pub async fn delete_entry(
-    pool: &SqlitePool,
-    entry_date: &str,
-) -> Result<bool, AppError> {
+pub async fn delete_entry(pool: &SqlitePool, entry_date: &str) -> Result<bool, AppError> {
     let result = sqlx::query("DELETE FROM entries WHERE entry_date = ?")
         .bind(entry_date)
         .execute(pool)
@@ -149,7 +144,7 @@ pub async fn list_ai_operations(
     let operations = sqlx::query_as::<_, AIOperation>(
         "SELECT * FROM ai_operations
          WHERE entry_id = ?
-         ORDER BY created_at DESC"
+         ORDER BY created_at DESC",
     )
     .bind(entry_id)
     .fetch_all(pool)
@@ -173,16 +168,12 @@ pub async fn delete_ai_operations_for_entry(
 // ===== App Settings =====
 
 /// Save an app setting (key-value store)
-pub async fn save_setting(
-    pool: &SqlitePool,
-    key: &str,
-    value: &str,
-) -> Result<(), AppError> {
+pub async fn save_setting(pool: &SqlitePool, key: &str, value: &str) -> Result<(), AppError> {
     let now = chrono::Utc::now().timestamp_millis();
 
     sqlx::query(
         "INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)
-         ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?"
+         ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?",
     )
     .bind(key)
     .bind(value)
@@ -196,10 +187,7 @@ pub async fn save_setting(
 }
 
 /// Get an app setting by key
-pub async fn get_setting(
-    pool: &SqlitePool,
-    key: &str,
-) -> Result<Option<String>, AppError> {
+pub async fn get_setting(pool: &SqlitePool, key: &str) -> Result<Option<String>, AppError> {
     let result = sqlx::query_scalar("SELECT value FROM app_settings WHERE key = ?")
         .bind(key)
         .fetch_optional(pool)
@@ -224,7 +212,7 @@ pub async fn upsert_entry_mood(
         "UPDATE entries
          SET mood = ?, mood_emoji = ?, updated_at = ?
          WHERE entry_date = ?
-         RETURNING *"
+         RETURNING *",
     )
     .bind(mood)
     .bind(mood_emoji)
@@ -275,7 +263,7 @@ pub async fn list_entries_by_mood(
     let entries = sqlx::query_as::<_, DiaryEntry>(
         "SELECT * FROM entries
          WHERE entry_date LIKE ? AND mood = ?
-         ORDER BY entry_date DESC"
+         ORDER BY entry_date DESC",
     )
     .bind(format!("{}%", month))
     .bind(mood)
@@ -289,16 +277,13 @@ pub async fn list_entries_by_mood(
 
 /// Search entries by full-text query
 /// Returns entries matching the search query, ordered by relevance
-pub async fn search_entries(
-    pool: &SqlitePool,
-    query: &str,
-) -> Result<Vec<DiaryEntry>, AppError> {
+pub async fn search_entries(pool: &SqlitePool, query: &str) -> Result<Vec<DiaryEntry>, AppError> {
     // Use FTS5 to search, then join with entries table to get full entry data
     let entries = sqlx::query_as::<_, DiaryEntry>(
         "SELECT e.* FROM entries e
          INNER JOIN entries_fts fts ON e.id = fts.entry_id
          WHERE entries_fts MATCH ?
-         ORDER BY bm25(entries_fts) DESC, e.entry_date DESC"
+         ORDER BY bm25(entries_fts) DESC, e.entry_date DESC",
     )
     .bind(query)
     .fetch_all(pool)
@@ -310,18 +295,17 @@ pub async fn search_entries(
 // ===== Statistics =====
 
 /// Get writing statistics
-pub async fn get_writing_stats(
-    pool: &SqlitePool,
-) -> Result<WritingStats, AppError> {
+pub async fn get_writing_stats(pool: &SqlitePool) -> Result<WritingStats, AppError> {
     // Get total entry count
     let total_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM entries")
         .fetch_one(pool)
         .await?;
 
     // Get all entry dates sorted
-    let dates: Vec<String> = sqlx::query_scalar("SELECT entry_date FROM entries ORDER BY entry_date ASC")
-        .fetch_all(pool)
-        .await?;
+    let dates: Vec<String> =
+        sqlx::query_scalar("SELECT entry_date FROM entries ORDER BY entry_date ASC")
+            .fetch_all(pool)
+            .await?;
 
     // Calculate current streak (consecutive days ending today or before)
     let current_streak = calculate_current_streak(&dates);
@@ -397,22 +381,17 @@ fn calculate_longest_streak(dates: &[String]) -> i64 {
 // ===== Export/Import =====
 
 /// Export all user data (entries and AI operations)
-pub async fn export_all_data(
-    pool: &SqlitePool,
-) -> Result<ExportData, AppError> {
+pub async fn export_all_data(pool: &SqlitePool) -> Result<ExportData, AppError> {
     // Get all entries
-    let entries = sqlx::query_as::<_, DiaryEntry>(
-        "SELECT * FROM entries ORDER BY entry_date ASC"
-    )
-    .fetch_all(pool)
-    .await?;
+    let entries = sqlx::query_as::<_, DiaryEntry>("SELECT * FROM entries ORDER BY entry_date ASC")
+        .fetch_all(pool)
+        .await?;
 
     // Get all AI operations
-    let ai_operations = sqlx::query_as::<_, AIOperation>(
-        "SELECT * FROM ai_operations ORDER BY created_at ASC"
-    )
-    .fetch_all(pool)
-    .await?;
+    let ai_operations =
+        sqlx::query_as::<_, AIOperation>("SELECT * FROM ai_operations ORDER BY created_at ASC")
+            .fetch_all(pool)
+            .await?;
 
     Ok(ExportData {
         version: "1.0".to_string(),
@@ -433,12 +412,11 @@ pub async fn import_data(
     // Import entries
     for entry in data.entries {
         // Check if entry exists
-        let existing = sqlx::query_scalar::<_, String>(
-            "SELECT id FROM entries WHERE entry_date = ?"
-        )
-        .bind(&entry.entry_date)
-        .fetch_optional(pool)
-        .await?;
+        let existing =
+            sqlx::query_scalar::<_, String>("SELECT id FROM entries WHERE entry_date = ?")
+                .bind(&entry.entry_date)
+                .fetch_optional(pool)
+                .await?;
 
         match (existing, options.overwrite) {
             (None, _) => {
@@ -462,7 +440,7 @@ pub async fn import_data(
                 // Update existing entry
                 sqlx::query(
                     "UPDATE entries SET content_json = ?, mood = ?, mood_emoji = ?, updated_at = ?
-                     WHERE entry_date = ?"
+                     WHERE entry_date = ?",
                 )
                 .bind(&entry.content_json)
                 .bind(&entry.mood)
@@ -484,12 +462,11 @@ pub async fn import_data(
     if options.include_ai_operations {
         for op in data.ai_operations {
             // Check if AI operation exists
-            let existing = sqlx::query_scalar::<_, String>(
-                "SELECT id FROM ai_operations WHERE id = ?"
-            )
-            .bind(&op.id)
-            .fetch_optional(pool)
-            .await?;
+            let existing =
+                sqlx::query_scalar::<_, String>("SELECT id FROM ai_operations WHERE id = ?")
+                    .bind(&op.id)
+                    .fetch_optional(pool)
+                    .await?;
 
             if existing.is_none() {
                 // Only insert if doesn't exist

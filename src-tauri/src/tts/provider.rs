@@ -27,10 +27,10 @@ pub struct TTSRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TTSResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub audio_bytes: Option<Vec<u8>>,  // Raw audio bytes
-    pub audio_file: Option<String>,  // Path to audio file (set by Tauri command)
+    pub audio_bytes: Option<Vec<u8>>, // Raw audio bytes
+    pub audio_file: Option<String>, // Path to audio file (set by Tauri command)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub audio_base64: Option<String>,  // Base64 encoded audio (for small files)
+    pub audio_base64: Option<String>, // Base64 encoded audio (for small files)
     pub format: String,
     pub duration_ms: Option<u32>,
     pub provider: String,
@@ -86,18 +86,13 @@ impl TTSError {
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,
-            TTSError::Timeout
-                | TTSError::NetworkError(_)
-                | TTSError::RateLimitExceeded(_)
+            TTSError::Timeout | TTSError::NetworkError(_) | TTSError::RateLimitExceeded(_)
         )
     }
 
     /// Whether the error indicates authentication issue
     pub fn is_auth_error(&self) -> bool {
-        matches!(
-            self,
-            TTSError::NoApiKey | TTSError::AuthenticationFailed(_)
-        )
+        matches!(self, TTSError::NoApiKey | TTSError::AuthenticationFailed(_))
     }
 }
 

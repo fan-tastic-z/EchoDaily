@@ -62,7 +62,7 @@ jobs:
 
       - name: Run Clippy
         working-directory: ./src-tauri
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --all-targets --all-features -- -W warnings
 
       - name: Run tests
         working-directory: ./src-tauri

@@ -18,8 +18,10 @@ async fn upsert_overwrites_same_date() {
     migrations::run(&pool).await.expect("migrate");
 
     let date = "2026-01-01";
-    let content1 = r#"{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"a"}]}]}"#;
-    let content2 = r#"{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"b"}]}]}"#;
+    let content1 =
+        r#"{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"a"}]}]}"#;
+    let content2 =
+        r#"{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"b"}]}]}"#;
 
     let first = queries::upsert_entry(&pool, date, content1)
         .await
@@ -37,9 +39,7 @@ async fn upsert_overwrites_same_date() {
         .expect("some entry");
     assert_eq!(fetched.content_json, content2);
 
-    let entries = queries::list_entries(&pool, "2026-01")
-        .await
-        .expect("list");
+    let entries = queries::list_entries(&pool, "2026-01").await.expect("list");
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].entry_date, date);
 }

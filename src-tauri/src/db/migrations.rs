@@ -1,4 +1,4 @@
-use sqlx::{SqlitePool, Executor};
+use sqlx::{Executor, SqlitePool};
 
 // Migration: initial schema
 const MIGRATION_001: &str = r#"
@@ -100,7 +100,6 @@ CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN
 END;
 "#;
 
-
 pub async fn run(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     let mut conn = pool.begin().await?;
 
@@ -115,9 +114,10 @@ pub async fn run(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     )
     .await?;
 
-    let current_version: i64 = sqlx::query_scalar("SELECT COALESCE(MAX(version), 0) FROM schema_migrations")
-        .fetch_one(&mut *conn)
-        .await?;
+    let current_version: i64 =
+        sqlx::query_scalar("SELECT COALESCE(MAX(version), 0) FROM schema_migrations")
+            .fetch_one(&mut *conn)
+            .await?;
 
     if current_version < 1 {
         conn.execute(MIGRATION_001).await?;

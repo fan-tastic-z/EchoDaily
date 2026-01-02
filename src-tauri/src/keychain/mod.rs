@@ -1,5 +1,5 @@
-use keyring::Entry;
 use crate::error::AppError;
+use keyring::Entry;
 
 const SERVICE_NAME: &str = "echo-daily";
 const API_KEY_ENTRY: &str = "ai-api-key";
@@ -40,7 +40,6 @@ pub fn has_api_key() -> bool {
 }
 
 /// ===== TTS API Key Management (Qwen) =====
-
 /// Get the TTS API key from secure storage (Qwen)
 pub fn get_tts_api_key() -> Result<Option<String>, AppError> {
     let entry = Entry::new(SERVICE_NAME, TTS_API_KEY_ENTRY)?;
@@ -75,7 +74,6 @@ pub fn has_tts_api_key() -> bool {
 }
 
 /// ===== Murf API Key Management =====
-
 /// Get the Murf API key from secure storage
 pub fn get_murf_api_key() -> Result<Option<String>, AppError> {
     let entry = Entry::new(SERVICE_NAME, MURF_API_KEY_ENTRY)?;

@@ -1,4 +1,4 @@
-use super::provider::{TTSProvider, TTSRequest, TTSResponse, TTSError, TTSVoice};
+use super::provider::{TTSError, TTSProvider, TTSRequest, TTSResponse, TTSVoice};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -115,12 +115,12 @@ impl MurfTTSProvider {
             Some("es") | Some("es-ES") => "es-ES-elvira".to_string(), // Spanish
             Some("fr") | Some("fr-FR") => "fr-FR-adélie".to_string(), // French
             Some("de") | Some("de-DE") => "de-DE-matthias".to_string(), // German
-            Some("it") | Some("it-IT") => "it-IT-greta".to_string(), // Italian
+            Some("it") | Some("it-IT") => "it-IT-greta".to_string(),  // Italian
             Some("pt") | Some("pt-BR") => "pt-BR-isadora".to_string(), // Portuguese
-            Some("zh") | Some("zh-CN") => "zh-CN-tao".to_string(), // Chinese
-            Some("ja") | Some("ja-JP") => "ja-JP-kenji".to_string(), // Japanese
+            Some("zh") | Some("zh-CN") => "zh-CN-tao".to_string(),    // Chinese
+            Some("ja") | Some("ja-JP") => "ja-JP-kenji".to_string(),  // Japanese
             Some("ko") | Some("ko-KR") => "ko-KR-gyeong".to_string(), // Korean
-            _ => "en-US-natalie".to_string(), // Default fallback
+            _ => "en-US-natalie".to_string(),                         // Default fallback
         }
     }
 }
@@ -144,10 +144,7 @@ impl TTSProvider for MurfTTSProvider {
         }
 
         // Check keychain
-        crate::keychain::get_murf_api_key()
-            .ok()
-            .flatten()
-            .is_some()
+        crate::keychain::get_murf_api_key().ok().flatten().is_some()
     }
 
     async fn synthesize(&self, request: TTSRequest) -> Result<TTSResponse, TTSError> {
@@ -168,8 +165,8 @@ impl TTSProvider for MurfTTSProvider {
             format: Some(Self::map_format(&request.output_format).to_string()),
             sample_rate: Some(24000), // Good balance between quality and size
             rate: Self::map_rate(request.speed),
-            pitch: None, // Not exposed in TTSRequest
-            style: None, // Not exposed in TTSRequest
+            pitch: None,                  // Not exposed in TTSRequest
+            style: None,                  // Not exposed in TTSRequest
             encode_as_base64: Some(true), // Get audio directly in response
         };
 
@@ -214,26 +211,21 @@ impl TTSProvider for MurfTTSProvider {
             )));
         }
 
-        let murf_response: MurfTTSResponse = serde_json::from_str(&body).map_err(|e| {
-            TTSError::Unknown(format!("Invalid response format: {}", e))
-        })?;
+        let murf_response: MurfTTSResponse = serde_json::from_str(&body)
+            .map_err(|e| TTSError::Unknown(format!("Invalid response format: {}", e)))?;
 
         // Extract audio bytes (either from base64 or download from URL)
         let audio_bytes = if let Some(base64_audio) = &murf_response.encoded_audio {
             // Decode base64 audio
             use base64::prelude::*;
-            BASE64_STANDARD
-                .decode(base64_audio)
-                .ok()
+            BASE64_STANDARD.decode(base64_audio).ok()
         } else if let Some(audio_url) = &murf_response.audio_file {
             // Download from URL
             eprintln!("TTS: Downloading audio from URL: {}", audio_url);
-            let audio_response = self
-                .client
-                .get(audio_url)
-                .send()
-                .await
-                .map_err(|e| TTSError::NetworkError(format!("Failed to download audio: {}", e)))?;
+            let audio_response =
+                self.client.get(audio_url).send().await.map_err(|e| {
+                    TTSError::NetworkError(format!("Failed to download audio: {}", e))
+                })?;
 
             if !audio_response.status().is_success() {
                 return Err(TTSError::ProviderError(format!(
@@ -263,7 +255,7 @@ impl TTSProvider for MurfTTSProvider {
             eprintln!("TTS: Returning Murf response with audio bytes");
             Ok(TTSResponse {
                 audio_bytes,
-                audio_file: None, // Will be set by Tauri command
+                audio_file: None,   // Will be set by Tauri command
                 audio_base64: None, // Will be set by Tauri command
                 format: Self::format_to_string(&request.output_format).to_string(),
                 duration_ms,

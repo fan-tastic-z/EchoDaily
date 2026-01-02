@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
+pub mod murf;
 pub mod provider;
 pub mod qwen;
-pub mod murf;
 
+pub use murf::MurfTTSProvider;
 pub use provider::{
-    TTSProvider, TTSRequest, TTSResponse, TTSError, TTSSettings, TTSVoice, TTSOutputFormat,
+    TTSError, TTSOutputFormat, TTSProvider, TTSRequest, TTSResponse, TTSSettings, TTSVoice,
 };
 pub use qwen::QwenTTSProvider;
-pub use murf::MurfTTSProvider;
 
 /// Supported TTS provider types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,7 +39,10 @@ impl TTSProviderType {
 }
 
 /// Create a TTS provider instance by type with API key
-pub fn create_provider(provider_type: TTSProviderType, api_key: Option<String>) -> Arc<dyn TTSProvider> {
+pub fn create_provider(
+    provider_type: TTSProviderType,
+    api_key: Option<String>,
+) -> Arc<dyn TTSProvider> {
     match provider_type {
         TTSProviderType::Qwen => Arc::new(QwenTTSProvider::new(api_key)),
         TTSProviderType::Murf => Arc::new(MurfTTSProvider::new(api_key)),
@@ -48,15 +51,15 @@ pub fn create_provider(provider_type: TTSProviderType, api_key: Option<String>) 
 
 /// Get a TTS provider by type with API key from keychain
 /// Returns error if API key is required but not found
-pub async fn get_provider(provider_type: TTSProviderType) -> Result<Arc<dyn TTSProvider>, TTSError> {
+pub async fn get_provider(
+    provider_type: TTSProviderType,
+) -> Result<Arc<dyn TTSProvider>, TTSError> {
     let api_key = match provider_type {
         TTSProviderType::Qwen => {
-            crate::keychain::get_tts_api_key()
-                .map_err(|e| TTSError::Unknown(e.to_string()))?
+            crate::keychain::get_tts_api_key().map_err(|e| TTSError::Unknown(e.to_string()))?
         }
         TTSProviderType::Murf => {
-            crate::keychain::get_murf_api_key()
-                .map_err(|e| TTSError::Unknown(e.to_string()))?
+            crate::keychain::get_murf_api_key().map_err(|e| TTSError::Unknown(e.to_string()))?
         }
     };
 
