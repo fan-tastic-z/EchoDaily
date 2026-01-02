@@ -361,6 +361,33 @@ async fn get_tts_settings(
     Ok(Some(settings))
 }
 
+// ===== Mood Tracking Operations =====
+
+/// Update or create an entry with mood information
+#[tauri::command]
+async fn upsert_entry_mood(
+    entry_date: String,
+    mood: Option<String>,
+    mood_emoji: Option<String>,
+    pool: tauri::State<'_, SqlitePool>,
+) -> Result<DiaryEntry, AppError> {
+    validate_entry_date(&entry_date)?;
+    let entry = db::queries::upsert_entry_mood(&pool, &entry_date, mood.as_deref(), mood_emoji.as_deref()).await?;
+    Ok(entry)
+}
+
+/// List entries filtered by mood for a given month
+#[tauri::command]
+async fn list_entries_by_mood(
+    month: String,
+    mood: String,
+    pool: tauri::State<'_, SqlitePool>,
+) -> Result<Vec<DiaryEntry>, AppError> {
+    validate_month(&month)?;
+    let entries = db::queries::list_entries_by_mood(&pool, &month, &mood).await?;
+    Ok(entries)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -385,6 +412,8 @@ pub fn run() {
             list_tts_voices,
             save_tts_settings,
             get_tts_settings,
+            upsert_entry_mood,
+            list_entries_by_mood,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

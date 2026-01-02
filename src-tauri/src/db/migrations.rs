@@ -56,6 +56,17 @@ CREATE TABLE IF NOT EXISTS app_settings (
 CREATE INDEX IF NOT EXISTS idx_app_settings_updated_at ON app_settings(updated_at);
 "#;
 
+// Migration: add mood tracking to entries
+const MIGRATION_004: &str = r#"
+-- Add mood tracking columns to entries table
+ALTER TABLE entries ADD COLUMN mood TEXT;
+ALTER TABLE entries ADD COLUMN mood_emoji TEXT;
+
+-- Create index for mood filtering
+CREATE INDEX IF NOT EXISTS idx_entries_mood ON entries(mood);
+"#;
+
+
 pub async fn run(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     let mut conn = pool.begin().await?;
 
@@ -105,6 +116,17 @@ pub async fn run(pool: &SqlitePool) -> Result<(), sqlx::Error> {
         let now = chrono::Utc::now().timestamp_millis();
         sqlx::query("INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)")
             .bind(3_i64)
+            .bind(now)
+            .execute(&mut *conn)
+            .await?;
+    }
+
+    if current_version < 4 {
+        conn.execute(MIGRATION_004).await?;
+
+        let now = chrono::Utc::now().timestamp_millis();
+        sqlx::query("INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)")
+            .bind(4_i64)
             .bind(now)
             .execute(&mut *conn)
             .await?;

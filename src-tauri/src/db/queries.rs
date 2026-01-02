@@ -1,7 +1,8 @@
-use sqlx::SqlitePool;
+use sqlx::{SqlitePool, Row};
 use uuid::Uuid;
 use crate::models::{DiaryEntry, AIOperation};
 use crate::error::AppError;
+use serde_json::json;
 
 pub async fn upsert_entry(
     pool: &SqlitePool,
@@ -32,17 +33,21 @@ pub async fn upsert_entry(
             id: id.clone(),
             entry_date: entry_date.to_string(),
             content_json: content_json.to_string(),
+            mood: None,
+            mood_emoji: None,
             created_at: now,
             updated_at: now,
         };
 
         sqlx::query(
-            "INSERT INTO entries (id, entry_date, content_json, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO entries (id, entry_date, content_json, mood, mood_emoji, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(&entry.id)
         .bind(&entry.entry_date)
         .bind(&entry.content_json)
+        .bind(&entry.mood)
+        .bind(&entry.mood_emoji)
         .bind(entry.created_at)
         .bind(entry.updated_at)
         .execute(pool)
@@ -201,4 +206,81 @@ pub async fn get_setting(
         .await?;
 
     Ok(result)
+}
+
+// ===== Mood Tracking =====
+
+/// Update or create an entry with mood information
+pub async fn upsert_entry_mood(
+    pool: &SqlitePool,
+    entry_date: &str,
+    mood: Option<&str>,
+    mood_emoji: Option<&str>,
+) -> Result<DiaryEntry, AppError> {
+    let now = chrono::Utc::now().timestamp_millis();
+
+    // First try to update existing entry
+    let result = sqlx::query_as::<_, DiaryEntry>(
+        "UPDATE entries
+         SET mood = ?, mood_emoji = ?, updated_at = ?
+         WHERE entry_date = ?
+         RETURNING *"
+    )
+    .bind(mood)
+    .bind(mood_emoji)
+    .bind(now)
+    .bind(entry_date)
+    .fetch_optional(pool)
+    .await?;
+
+    if let Some(entry) = result {
+        Ok(entry)
+    } else {
+        // Entry doesn't exist, create it with mood
+        let id = Uuid::new_v4().to_string();
+        let entry = DiaryEntry {
+            id: id.clone(),
+            entry_date: entry_date.to_string(),
+            content_json: serde_json::to_string(&json!({})).unwrap(), // Empty content
+            mood: mood.map(|s| s.to_string()),
+            mood_emoji: mood_emoji.map(|s| s.to_string()),
+            created_at: now,
+            updated_at: now,
+        };
+
+        sqlx::query(
+            "INSERT INTO entries (id, entry_date, content_json, mood, mood_emoji, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&entry.id)
+        .bind(&entry.entry_date)
+        .bind(&entry.content_json)
+        .bind(&entry.mood)
+        .bind(&entry.mood_emoji)
+        .bind(entry.created_at)
+        .bind(entry.updated_at)
+        .execute(pool)
+        .await?;
+
+        Ok(entry)
+    }
+}
+
+/// List entries by mood for a given month
+pub async fn list_entries_by_mood(
+    pool: &SqlitePool,
+    month: &str, // YYYY-MM
+    mood: &str,
+) -> Result<Vec<DiaryEntry>, AppError> {
+    let entries = sqlx::query_as::<_, DiaryEntry>(
+        "SELECT * FROM entries
+         WHERE entry_date LIKE ? AND mood = ?
+         ORDER BY entry_date DESC"
+    )
+    .bind(format!("{}%", month))
+    .bind(mood)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(entries)
 }

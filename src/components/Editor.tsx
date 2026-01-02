@@ -5,10 +5,12 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { format } from 'date-fns';
 import { useAutosave } from '../hooks/useAutosave';
-import { getEntry, deleteEntry } from '../lib/api';
+import { getEntry, deleteEntry, upsertEntryMood } from '../lib/api';
 import { Trash2, Heading1, Heading2, Heading3, List, ListOrdered, Bold, Italic } from 'lucide-react';
 import { SelectionMenu } from './SelectionMenu';
 import { TTSPlayer } from './TTSPlayer';
+import { MoodSelector } from './MoodSelector';
+import { type MoodType } from '../types';
 
 const editorStyles = `
   .ProseMirror {
@@ -133,6 +135,25 @@ export function Editor() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [entryText, setEntryText] = useState('');
+  const [currentMood, setCurrentMood] = useState<MoodType | undefined>(undefined);
+
+  // Update local mood state when entry changes
+  useEffect(() => {
+    setCurrentMood(currentEntry?.mood as MoodType | undefined);
+  }, [currentEntry]);
+
+  // Handle mood change
+  const handleMoodChange = async (mood: MoodType | undefined) => {
+    setCurrentMood(mood);
+    try {
+      const updatedEntry = await upsertEntryMood(selectedDate, mood, undefined);
+      setCurrentEntry(updatedEntry);
+    } catch (error) {
+      console.error('Failed to save mood:', error);
+      // Revert on error
+      setCurrentMood(currentEntry?.mood as MoodType | undefined);
+    }
+  };
 
   // Selection menu state
   const [showSelectionMenu, setShowSelectionMenu] = useState(false);
@@ -334,13 +355,23 @@ export function Editor() {
       <style>{editorStyles}</style>
       <main className="flex-1 flex flex-col overflow-hidden">
         <div className="h-12 border-b border-border/40 bg-paper-bg px-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-ink-secondary">
-              {format(displayDate, 'EEEE')}
-            </span>
-            <span className="text-ink-primary font-medium">
-              {format(displayDate, 'MMM d, yyyy')}
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-ink-secondary">
+                {format(displayDate, 'EEEE')}
+              </span>
+              <span className="text-ink-primary font-medium">
+                {format(displayDate, 'MMM d, yyyy')}
+              </span>
+            </div>
+
+            {/* Mood Selector */}
+            <div className="h-8 w-px bg-border/40" />
+            <MoodSelector
+              entryDate={selectedDate}
+              currentMood={currentMood}
+              onMoodChange={handleMoodChange}
+            />
           </div>
 
           {/* TTS Player and Delete button - only show when there's content */}

@@ -99,3 +99,27 @@ export async function saveTTSSettings(settings: TTSSettings): Promise<void> {
 export async function getTTSSettings(): Promise<TTSSettings | null> {
   return invoke('get_tts_settings');
 }
+
+// ===== Mood Tracking API =====
+
+// Update or create an entry with mood information
+export async function upsertEntryMood(
+  entryDate: string,
+  mood?: string,
+  moodEmoji?: string
+): Promise<DiaryEntry> {
+  return invoke('upsert_entry_mood', {
+    entryDate,
+    ...(mood !== undefined && { mood }),
+    ...(moodEmoji !== undefined && { moodEmoji }),
+  });
+}
+
+// List entries filtered by mood for a given month
+export async function listEntriesByMood(
+  month: string,
+  mood: string
+): Promise<DiaryEntry[]> {
+  return invoke('list_entries_by_mood', { month, mood });
+}
+

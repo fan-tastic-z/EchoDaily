@@ -6,6 +6,10 @@ pub struct DiaryEntry {
     pub id: String,
     pub entry_date: String,        // YYYY-MM-DD
     pub content_json: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mood: Option<String>,       // Mood category: amazing, happy, neutral, sad, awful
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mood_emoji: Option<String>, // Emoji representation: 😄, 😊, 😐, 😢, 😭
     pub created_at: i64,           // unix timestamp ms
     pub updated_at: i64,
 }
@@ -61,3 +65,4 @@ impl AIOpType {
         }
     }
 }
+

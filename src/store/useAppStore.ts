@@ -30,6 +30,9 @@ interface AppState {
 
   currentMonth: string; // yyyy-MM
   setCurrentMonth: (month: string) => void;
+
+  monthEntries: DiaryEntry[];
+  setMonthEntries: (entries: DiaryEntry[]) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -69,4 +72,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   currentMonth: format(new Date(), 'yyyy-MM'),
   setCurrentMonth: (month) => set({ currentMonth: month }),
+
+  monthEntries: [],
+  setMonthEntries: (entries) => set({ monthEntries: entries }),
 }));

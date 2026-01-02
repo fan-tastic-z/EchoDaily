@@ -3,6 +3,8 @@ export interface DiaryEntry {
   id: string;
   entry_date: string; // YYYY-MM-DD
   content_json: string; // ProseMirror JSON serialized string
+  mood?: string; // Mood category: amazing, happy, neutral, sad, awful
+  mood_emoji?: string; // Emoji representation: 😄, 😊, 😐, 😢, 😭
   created_at: number; // unix timestamp ms
   updated_at: number; // unix timestamp ms
 }
@@ -80,3 +82,25 @@ export interface TTSSettings {
   voice?: string;
   speed: number;
 }
+
+// ===== Mood Tracking Types =====
+
+// Mood type enum
+export type MoodType = 'amazing' | 'happy' | 'neutral' | 'sad' | 'awful';
+
+// Mood option with display information
+export interface MoodOption {
+  type: MoodType;
+  emoji: string;
+  label: string;
+}
+
+// Available mood options
+export const MOOD_OPTIONS: MoodOption[] = [
+  { type: 'amazing', emoji: '😄', label: 'Amazing' },
+  { type: 'happy', emoji: '😊', label: 'Happy' },
+  { type: 'neutral', emoji: '😐', label: 'Neutral' },
+  { type: 'sad', emoji: '😢', label: 'Sad' },
+  { type: 'awful', emoji: '😭', label: 'Awful' },
+];
+
