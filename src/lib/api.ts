@@ -76,18 +76,27 @@ export async function textToSpeech(options: {
   voice?: string;
   language?: string;
   speed?: number;
+  provider?: string;
 }): Promise<TTSResponse> {
   return invoke('text_to_speech', {
     text: options.text,
     ...(options.voice !== undefined && { voice: options.voice }),
     ...(options.language !== undefined && { language: options.language }),
     ...(options.speed !== undefined && { speed: options.speed }),
+    ...(options.provider !== undefined && { provider: options.provider }),
   });
 }
 
 // List available TTS voices
-export async function listTTSVoices(): Promise<TTSVoice[]> {
-  return invoke('list_tts_voices');
+export async function listTTSVoices(provider?: string): Promise<TTSVoice[]> {
+  return invoke('list_tts_voices', {
+    ...(provider !== undefined && { provider }),
+  });
+}
+
+// List available TTS providers
+export async function listTTSProviders(): Promise<string[]> {
+  return invoke('list_tts_providers');
 }
 
 // Save TTS settings
@@ -96,8 +105,10 @@ export async function saveTTSSettings(settings: TTSSettings): Promise<void> {
 }
 
 // Get TTS settings
-export async function getTTSSettings(): Promise<TTSSettings | null> {
-  return invoke('get_tts_settings');
+export async function getTTSSettings(provider?: string): Promise<TTSSettings | null> {
+  return invoke('get_tts_settings', {
+    ...(provider !== undefined && { provider }),
+  });
 }
 
 // ===== Mood Tracking API =====

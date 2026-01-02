@@ -87,9 +87,9 @@ export function Sidebar() {
 
       <div className="flex-1 overflow-y-auto p-3">
         <div className="grid grid-cols-7 gap-1.5">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
             <div
-              key={day}
+              key={`header-${index}`}
               className="text-center text-xs font-medium text-stone-400 py-2"
             >
               {day}

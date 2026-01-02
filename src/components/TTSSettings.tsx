@@ -1,12 +1,33 @@
 import { useState, useEffect } from 'react';
 import { X, Volume2 } from 'lucide-react';
-import { getTTSSettings, saveTTSSettings, listTTSVoices } from '../lib/api';
+import { getTTSSettings, saveTTSSettings, listTTSVoices, listTTSProviders } from '../lib/api';
 import type { TTSSettings, TTSVoice } from '../types';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const PROVIDER_INFO = {
+  qwen: {
+    name: 'Alibaba Cloud Qwen (通义千问)',
+    model: 'qwen3-tts-flash',
+    description: 'Supports Chinese, English, Japanese, Korean, and more',
+    apiPlaceholder: 'Enter your Alibaba Cloud DashScope API key',
+    apiLink: 'https://dashscope.console.aliyun.com/apiKey',
+    pricing: '¥0.8/10k characters. Free tier: 10k characters for new users.',
+    speedSupported: false,
+  },
+  murf: {
+    name: 'Murf.ai',
+    model: 'GEN2',
+    description: '130+ AI voices across 20+ languages with expressive styles',
+    apiPlaceholder: 'Enter your Murf.ai API key',
+    apiLink: 'https://murf.ai/api',
+    pricing: 'Character-based billing. Check Murf.ai for detailed pricing.',
+    speedSupported: true,
+  },
+};
 
 export function TTSSettingsDialog({ isOpen, onClose }: Props) {
   const [settings, setSettings] = useState<TTSSettings>({
@@ -16,6 +37,7 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
     voice: 'cherry',
     speed: 1.0,
   });
+  const [availableProviders, setAvailableProviders] = useState<string[]>([]);
   const [voices, setVoices] = useState<TTSVoice[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,14 +45,31 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
 
   useEffect(() => {
     if (isOpen) {
+      loadProviders();
       loadSettings();
-      loadVoices();
     }
   }, [isOpen]);
 
+  // Load voices when provider changes
+  useEffect(() => {
+    if (isOpen && settings.provider) {
+      loadVoices();
+    }
+  }, [settings.provider, isOpen]);
+
+  const loadProviders = async () => {
+    try {
+      const providers = await listTTSProviders();
+      setAvailableProviders(providers);
+    } catch (err) {
+      console.error('Failed to load TTS providers:', err);
+      setAvailableProviders(['qwen', 'murf']);
+    }
+  };
+
   const loadSettings = async () => {
     try {
-      const current = await getTTSSettings();
+      const current = await getTTSSettings(settings.provider);
       if (current) {
         setSettings({
           ...current,
@@ -46,8 +85,49 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
 
   const loadVoices = async () => {
     try {
-      const availableVoices = await listTTSVoices();
+      const availableVoices = await listTTSVoices(settings.provider);
       setVoices(availableVoices);
+
+      // Set default voice if current voice is empty or not available
+      if (availableVoices.length > 0) {
+        const currentVoiceValid = availableVoices.some(v => v.id === settings.voice);
+        if (!settings.voice || !currentVoiceValid) {
+          setSettings(prev => ({
+            ...prev,
+            voice: availableVoices[0].id,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load TTS voices:', err);
+    }
+  };
+
+  const handleProviderChange = async (newProvider: string) => {
+    // Get provider info and update provider, model
+    const providerModel = PROVIDER_INFO[newProvider as keyof typeof PROVIDER_INFO]?.model || 'qwen3-tts-flash';
+
+    setSettings(prev => ({
+      ...prev,
+      provider: newProvider,
+      model: providerModel,
+      // Don't reset voice yet - let loadVoices handle it
+    }));
+
+    // Load voices for new provider
+    try {
+      const availableVoices = await listTTSVoices(newProvider);
+      setVoices(availableVoices);
+
+      // Set first voice as default
+      if (availableVoices.length > 0) {
+        setSettings(prev => ({
+          ...prev,
+          provider: newProvider,
+          model: providerModel,
+          voice: availableVoices[0].id,
+        }));
+      }
     } catch (err) {
       console.error('Failed to load TTS voices:', err);
     }
@@ -59,6 +139,11 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
       return;
     }
 
+    if (!settings.voice) {
+      setError('Please select a voice');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setSuccess(false);
@@ -66,7 +151,7 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
     try {
       await saveTTSSettings({
         provider: settings.provider,
-        model: settings.model,
+        model: PROVIDER_INFO[settings.provider as keyof typeof PROVIDER_INFO]?.model || 'qwen3-tts-flash',
         apiKey: settings.apiKey.trim(),
         voice: settings.voice,
         speed: settings.speed,
@@ -84,6 +169,8 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
   };
 
   if (!isOpen) return null;
+
+  const currentProviderInfo = PROVIDER_INFO[settings.provider as keyof typeof PROVIDER_INFO];
 
   // Group voices by language
   const voicesByLanguage = voices.reduce((acc, voice) => {
@@ -117,13 +204,18 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
             </label>
             <select
               value={settings.provider}
-              disabled
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-stone-50 text-stone-500"
+              onChange={(e) => handleProviderChange(e.target.value)}
+              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+              disabled={isLoading}
             >
-              <option value="qwen">Alibaba Cloud Qwen (通义千问)</option>
+              {availableProviders.map(provider => (
+                <option key={provider} value={provider}>
+                  {PROVIDER_INFO[provider as keyof typeof PROVIDER_INFO]?.name || provider}
+                </option>
+              ))}
             </select>
             <p className="text-xs text-stone-500 mt-1">
-              Supports Chinese, English, Japanese, Korean, and more
+              {currentProviderInfo?.description}
             </p>
           </div>
 
@@ -137,10 +229,10 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
               disabled
               className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-stone-50 text-stone-500"
             >
-              <option value="qwen3-tts-flash">Qwen3-TTS Flash</option>
+              <option value={currentProviderInfo?.model}>{currentProviderInfo?.model}</option>
             </select>
             <p className="text-xs text-stone-500 mt-1">
-              Fast synthesis with 49 voice options
+              {settings.provider === 'qwen' ? 'Fast synthesis with 49 voice options' : 'High-quality voices with expressive styles'}
             </p>
           </div>
 
@@ -153,7 +245,7 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
               value={settings.voice}
               onChange={(e) => setSettings({ ...settings, voice: e.target.value })}
               className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-              disabled={isLoading}
+              disabled={isLoading || voices.length === 0}
             >
               {Object.entries(voicesByLanguage).map(([lang, langVoices]) => (
                 <optgroup key={lang} label={lang}>
@@ -190,9 +282,11 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
               <span>1.0x (Normal)</span>
               <span>2.0x (Fast)</span>
             </div>
-            <p className="text-xs text-amber-600 mt-1">
-              ⚠️ Speed control is not supported by Qwen TTS API. This setting is saved but not applied.
-            </p>
+            {!currentProviderInfo?.speedSupported && (
+              <p className="text-xs text-amber-600 mt-1">
+                ⚠️ Speed control is not supported by this provider.
+              </p>
+            )}
           </div>
 
           {/* API Key */}
@@ -204,19 +298,19 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
               type="password"
               value={settings.apiKey}
               onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
-              placeholder="Enter your Alibaba Cloud DashScope API key"
+              placeholder={currentProviderInfo?.apiPlaceholder}
               className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
               disabled={isLoading}
             />
             <p className="text-xs text-stone-500 mt-1">
               Get your API key from{' '}
               <a
-                href="https://dashscope.console.aliyun.com/apiKey"
+                href={currentProviderInfo?.apiLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-accent-blue hover:underline"
               >
-                dashscope.console.aliyun.com
+                {currentProviderInfo?.apiLink?.replace('https://', '')}
               </a>
             </p>
           </div>
@@ -224,7 +318,7 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
           {/* Info Box */}
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-700">
-              <strong>Pricing:</strong> ¥0.8/10k characters. Free tier: 10k characters for new users.
+              <strong>Pricing:</strong> {currentProviderInfo?.pricing}
             </p>
           </div>
 

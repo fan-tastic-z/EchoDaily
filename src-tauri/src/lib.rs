@@ -186,50 +186,66 @@ async fn text_to_speech(
     #[allow(unused_variables)] voice: Option<String>,
     language: Option<String>,
     #[allow(unused_variables)] speed: Option<f32>,
+    #[allow(unused_variables)] provider: Option<String>,
     app: tauri::AppHandle,
     pool: tauri::State<'_, SqlitePool>,
 ) -> Result<tts::TTSResponse, AppError> {
     println!("TTS: Command invoked, text length: {}", text.len());
 
-    // Get API key from keychain (may block, but try direct first)
-    println!("TTS: Getting API key...");
-    let api_key = keychain::get_tts_api_key()
-        .map_err(|e| {
-            println!("TTS: Keychain error: {}", e);
-            AppError::TTS(e.to_string())
-        })?
-        .ok_or_else(|| {
-            println!("TTS: No API key found");
-            AppError::TTS("API key not configured".to_string())
-        })?;
-
-    // Get TTS settings from database to read configured voice and speed
-    let (configured_voice, configured_speed) = if let Some(config_json) = db::queries::get_setting(&pool, "tts_config").await? {
+    // Get TTS settings from database to read configured provider, voice and speed
+    let (configured_provider, configured_voice, configured_speed) = if let Some(config_json) = db::queries::get_setting(&pool, "tts_config").await? {
         let config: serde_json::Value = serde_json::from_str(&config_json)?;
-        let voice = config["voice"].as_str().map(|s| s.to_string());
+        let provider_str = config["provider"].as_str().unwrap_or("qwen");
         let speed = config["speed"].as_f64().unwrap_or(1.0) as f32;
-        println!("TTS: Loaded from database - voice: {:?}, speed: {}", voice, speed);
-        (voice, speed)
+
+        // Use default voice if not configured
+        let voice = config["voice"].as_str().map(|s| s.to_string());
+        let voice = if voice.is_some() && voice.as_ref().unwrap().is_empty() {
+            None
+        } else {
+            voice
+        };
+
+        println!("TTS: Loaded from database - provider: {}, voice: {:?}, speed: {}", provider_str, voice, speed);
+        (provider_str.to_string(), voice, speed)
     } else {
         println!("TTS: No config in database, using defaults");
-        (Some("cherry".to_string()), 1.0)
+        ("qwen".to_string(), Some("cherry".to_string()), 1.0)
     };
 
-    println!("TTS: API key retrieved, configured voice: {:?}, speed: {}", configured_voice, configured_speed);
-    let provider_type = tts::TTSProviderType::Qwen;
-    let provider = tts::create_provider(provider_type, Some(api_key));
+    // Use provider from parameter if specified, otherwise use configured provider
+    let provider_str = provider.unwrap_or(configured_provider);
+    let provider_type = tts::TTSProviderType::from_str(&provider_str)
+        .unwrap_or(tts::TTSProviderType::Qwen);
 
-    println!("TTS: Provider created, building request");
+    println!("TTS: Using provider: {:?}", provider_type);
+
+    // Get the provider with API key
+    let tts_provider = tts::get_provider(provider_type).await
+        .map_err(|e| {
+            println!("TTS: Failed to get provider: {}", e);
+            AppError::TTS(e.to_string())
+        })?;
+
+    // Use default voice based on provider if not configured
+    let final_voice = configured_voice.or_else(|| {
+        match provider_type {
+            tts::TTSProviderType::Qwen => Some("cherry".to_string()),
+            tts::TTSProviderType::Murf => Some("en-US-natalie".to_string()),
+        }
+    });
+
+    println!("TTS: Provider created, building request with voice: {:?}", final_voice);
     let request = tts::TTSRequest {
         text,
-        voice: configured_voice, // Use configured voice instead of parameter
+        voice: final_voice,
         language,
-        speed: Some(configured_speed), // Use configured speed
+        speed: Some(configured_speed),
         output_format: tts::TTSOutputFormat::Mp3,
     };
 
     println!("TTS: Calling synthesize...");
-    let mut response = provider.synthesize(request).await
+    let mut response = tts_provider.synthesize(request).await
         .map_err(|e| {
             println!("TTS: Synthesize error: {}", e);
             AppError::TTS(e.to_string())
@@ -261,12 +277,13 @@ async fn text_to_speech(
                 })?;
 
             // Generate unique filename
-            let file_name = format!("tts_{}.{}.wav",
+            let file_name = format!("tts_{}.{}.{}",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
-                    .as_millis()
+                    .as_millis(),
+                response.format
             );
             let file_path = app_data_dir.join(&file_name);
 
@@ -294,27 +311,39 @@ async fn text_to_speech(
     Ok(response)
 }
 
-/// List available TTS voices
+/// List available TTS voices for a specific provider
 #[tauri::command]
-async fn list_tts_voices() -> Result<Vec<tts::TTSVoice>, AppError> {
-    let provider = tts::get_current_provider().await?;
-    let voices = provider.list_voices().await?;
+async fn list_tts_voices(
+    #[allow(unused_variables)] provider: Option<String>,
+) -> Result<Vec<tts::TTSVoice>, AppError> {
+    // Get provider from parameter or use default
+    let provider_str = provider.unwrap_or_else(|| "qwen".to_string());
+    let provider_type = tts::TTSProviderType::from_str(&provider_str)
+        .unwrap_or(tts::TTSProviderType::Qwen);
+
+    // Use get_provider_no_auth since listing voices doesn't require API key
+    let tts_provider = tts::get_provider_no_auth(provider_type);
+    let voices = tts_provider.list_voices().await?;
     Ok(voices)
 }
 
-/// Save TTS settings
+/// Save TTS settings (supports multiple providers)
 #[tauri::command]
 async fn save_tts_settings(
     settings: tts::TTSSettings,
     pool: tauri::State<'_, SqlitePool>,
 ) -> Result<(), AppError> {
-    // Save API key to keychain if provided
+    // Save API key to appropriate keychain entry based on provider
     if settings.api_key != "***" {
-        keychain::set_tts_api_key(&settings.api_key)?;
+        match settings.provider.as_str() {
+            "murf" => keychain::set_murf_api_key(&settings.api_key)?,
+            _ => keychain::set_tts_api_key(&settings.api_key)?, // Default to Qwen
+        }
     }
 
-    // Save voice and speed to database as JSON
+    // Save provider, voice and speed to database as JSON
     let config_json = serde_json::json!({
+        "provider": settings.provider,
         "voice": settings.voice,
         "speed": settings.speed
     });
@@ -323,26 +352,36 @@ async fn save_tts_settings(
     Ok(())
 }
 
-/// Get TTS settings
+/// Get TTS settings for a specific provider
 #[tauri::command]
 async fn get_tts_settings(
+    provider: Option<String>,
     pool: tauri::State<'_, SqlitePool>,
 ) -> Result<Option<tts::TTSSettings>, AppError> {
-    let api_key = keychain::get_tts_api_key()
-        .map_err(|e| AppError::TTS(e.to_string()))?
-        .ok_or_else(|| AppError::TTS("API key not configured".to_string()))?;
-    let is_configured = true; // We have an API key
+    let provider_str = provider.unwrap_or_else(|| "qwen".to_string());
 
-    if !is_configured {
-        return Ok(None);
-    }
+    // Get API key based on provider
+    let (api_key, default_model) = match provider_str.as_str() {
+        "murf" => (
+            keychain::get_murf_api_key()
+                .map_err(|e| AppError::TTS(e.to_string()))?
+                .ok_or_else(|| AppError::TTS("Murf API key not configured".to_string()))?,
+            "GEN2"
+        ),
+        _ => (
+            keychain::get_tts_api_key()
+                .map_err(|e| AppError::TTS(e.to_string()))?
+                .ok_or_else(|| AppError::TTS("API key not configured".to_string()))?,
+            "qwen3-tts-flash"
+        ),
+    };
 
     // Try to load config from database
     let settings = if let Some(config_json) = db::queries::get_setting(&pool, "tts_config").await? {
         let config: serde_json::Value = serde_json::from_str(&config_json)?;
         tts::TTSSettings {
-            provider: "qwen".to_string(),
-            model: "qwen3-tts-flash".to_string(),
+            provider: config["provider"].as_str().unwrap_or(&provider_str).to_string(),
+            model: config["model"].as_str().unwrap_or(default_model).to_string(),
             api_key: "***".to_string(),
             voice: config["voice"].as_str().map(|s| s.to_string()),
             speed: config["speed"].as_f64().unwrap_or(1.0) as f32,
@@ -350,15 +389,27 @@ async fn get_tts_settings(
     } else {
         // Default values
         tts::TTSSettings {
-            provider: "qwen".to_string(),
-            model: "qwen3-tts-flash".to_string(),
+            provider: provider_str.clone(),
+            model: default_model.to_string(),
             api_key: "***".to_string(),
-            voice: Some("cherry".to_string()),
+            voice: match provider_str.as_str() {
+                "murf" => Some("en-US-natalie".to_string()),
+                _ => Some("cherry".to_string()),
+            },
             speed: 1.0,
         }
     };
 
     Ok(Some(settings))
+}
+
+/// Get available TTS providers
+#[tauri::command]
+async fn list_tts_providers() -> Result<Vec<String>, AppError> {
+    Ok(tts::TTSProviderType::all()
+        .iter()
+        .map(|p| p.as_str().to_string())
+        .collect())
 }
 
 // ===== Mood Tracking Operations =====
@@ -410,6 +461,7 @@ pub fn run() {
             list_ai_operations,
             text_to_speech,
             list_tts_voices,
+            list_tts_providers,
             save_tts_settings,
             get_tts_settings,
             upsert_entry_mood,

@@ -9,6 +9,75 @@ interface TTSPlayerProps {
   onPlayingChange?: (isPlaying: boolean) => void;
 }
 
+// Audio system warmup flag - ensures audio decoder is initialized
+let audioSystemWarmedUp = false;
+
+async function warmUpAudioSystem() {
+  if (audioSystemWarmedUp) return;
+
+  try {
+    console.log('TTS: Warming up audio system...');
+
+    // Create a longer silent audio (200ms) to fully initialize the decoder
+    const silentAudio = new Audio();
+    silentAudio.volume = 0; // Mute so user doesn't hear anything
+
+    // Create a 200ms silent MP3 (properly formatted MP3 silence)
+    // This is a valid MP3 file with 200ms of silence
+    const silentMp3 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTSVAAAAAAAABQAAAL THCmG3XH//wAAAAA////////////////////////////////////////////////////////////wOAOR8AAAA0AAAASAAA21gABAAAAAEHTAEMAQAAACwAUAAYAAAA0AAAAADQAAAAAAAAAA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAAAAAgAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAAAAAgAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    silentAudio.src = silentMp3;
+
+    // Wait for the audio to be ready
+    await new Promise<void>((resolve) => {
+      const timeoutId = setTimeout(() => {
+        silentAudio.removeEventListener('canplay', onCanPlay);
+        silentAudio.removeEventListener('error', onError);
+        console.log('TTS: Warmup timeout, resolving anyway');
+        resolve();
+      }, 1000);
+
+      const onCanPlay = () => {
+        clearTimeout(timeoutId);
+        silentAudio.removeEventListener('canplay', onCanPlay);
+        silentAudio.removeEventListener('error', onError);
+        console.log('TTS: Warmup audio ready, playing...');
+
+        // Actually play the silent audio to fully activate the decoder
+        silentAudio.play().then(() => {
+          console.log('TTS: Warmup playback started');
+        }).catch((e) => {
+          console.warn('TTS: Warmup play failed (non-critical):', e);
+          // Continue anyway
+        });
+
+        // Wait a bit for playback to start and decoder to initialize
+        setTimeout(() => {
+          silentAudio.pause();
+          silentAudio.currentTime = 0;
+          resolve();
+        }, 200);
+      };
+
+      const onError = (e: Event) => {
+        clearTimeout(timeoutId);
+        silentAudio.removeEventListener('canplay', onCanPlay);
+        silentAudio.removeEventListener('error', onError);
+        console.warn('TTS: Warmup audio error (non-critical):', e);
+        resolve(); // Don't fail, just continue
+      };
+
+      silentAudio.addEventListener('canplay', onCanPlay);
+      silentAudio.addEventListener('error', onError);
+    });
+
+    audioSystemWarmedUp = true;
+    console.log('TTS: Audio system warmed up successfully');
+  } catch (e) {
+    console.warn('TTS: Failed to warm up audio system', e);
+    audioSystemWarmedUp = true; // Don't retry
+  }
+}
+
 export function TTSPlayer({ text, language = 'auto', onPlayingChange }: TTSPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +106,9 @@ export function TTSPlayer({ text, language = 'auto', onPlayingChange }: TTSPlaye
       setError('No text to play');
       return;
     }
+
+    // Warm up audio system on first play (prevents first-time audio cutoff)
+    await warmUpAudioSystem();
 
     console.log('TTS Request:', { text: text.substring(0, 50) + '...', language });
 
@@ -80,13 +152,15 @@ export function TTSPlayer({ text, language = 'auto', onPlayingChange }: TTSPlaye
         throw new Error('No audio data received');
       }
 
-      // Create audio element
+      // Create audio element with preload
       const audio = new Audio();
+      audio.preload = 'auto'; // Ensure audio is fully loaded
       audioRef.current = audio;
 
       // Set up event listeners
       audio.addEventListener('canplay', () => {
         console.log('TTS: Audio ready to play');
+        // Only start playing when audio is actually ready
         setIsLoading(false);
       });
 
@@ -113,8 +187,49 @@ export function TTSPlayer({ text, language = 'auto', onPlayingChange }: TTSPlaye
         audioRef.current = null;
       });
 
-      // Set source and play
+      // Set source first
       audio.src = audioSrc;
+
+      // Wait for audio to be ready before playing
+      console.log('TTS: Waiting for audio to load...');
+      await new Promise<void>((resolve, reject) => {
+        const onCanPlay = () => {
+          audio.removeEventListener('canplay', onCanPlay);
+          audio.removeEventListener('error', onError);
+          console.log('TTS: Audio loaded, adding delay for decoder initialization');
+
+          // Add delay to ensure audio decoder is fully initialized
+          // This prevents the first word from being cut off
+          // Longer delay for first play, shorter for subsequent plays
+          const delay = audioSystemWarmedUp ? 100 : 300;
+          setTimeout(() => {
+            resolve();
+          }, delay);
+        };
+
+        const onError = (e: Event) => {
+          audio.removeEventListener('canplay', onCanPlay);
+          audio.removeEventListener('error', onError);
+          reject(e);
+        };
+
+        audio.addEventListener('canplay', onCanPlay);
+        audio.addEventListener('error', onError);
+
+        // Also resolve if already ready (happens with cached/base64 audio)
+        if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
+          console.log('TTS: Audio already ready, adding delay');
+          audio.removeEventListener('canplay', onCanPlay);
+          audio.removeEventListener('error', onError);
+          // Still add delay for decoder initialization
+          const delay = audioSystemWarmedUp ? 100 : 300;
+          setTimeout(() => {
+            resolve();
+          }, delay);
+        }
+      });
+
+      // Now play the audio
       console.log('TTS: Starting playback...');
       await audio.play();
     } catch (err) {

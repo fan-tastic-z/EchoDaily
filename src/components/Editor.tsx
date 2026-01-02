@@ -12,6 +12,35 @@ import { TTSPlayer } from './TTSPlayer';
 import { MoodSelector } from './MoodSelector';
 import { type MoodType } from '../types';
 
+/**
+ * Recursively filters out unsupported TipTap nodes from content.
+ * This prevents warnings when loading content that contains nodes
+ * for extensions that aren't currently configured (e.g., image nodes).
+ */
+function filterUnsupportedNodes(content: any): any {
+  // Handle arrays (content is typically an array of nodes)
+  if (Array.isArray(content)) {
+    return content.map(filterUnsupportedNodes).filter(Boolean);
+  }
+
+  // Handle TipTap node objects (have a 'type' property)
+  if (content && typeof content === 'object' && content.type) {
+    // Filter out image nodes (and any other unsupported node types)
+    if (content.type === 'image') {
+      return null;
+    }
+
+    // Recursively filter nested content
+    const filtered = { ...content };
+    if (filtered.content) {
+      filtered.content = filterUnsupportedNodes(filtered.content);
+    }
+    return filtered;
+  }
+
+  return content;
+}
+
 const editorStyles = `
   .ProseMirror {
     outline: none;
@@ -298,8 +327,10 @@ export function Editor() {
     if (editor && currentEntry?.content_json) {
       try {
         const content = JSON.parse(currentEntry.content_json);
-        editor.commands.setContent(content, { emitUpdate: false });
-        setEditorContent(content);
+        // Filter out unsupported nodes (e.g., image nodes) to prevent TipTap warnings
+        const filteredContent = filterUnsupportedNodes(content);
+        editor.commands.setContent(filteredContent, { emitUpdate: false });
+        setEditorContent(filteredContent);
 
         // Extract plain text for TTS
         const text = editor.getText();
