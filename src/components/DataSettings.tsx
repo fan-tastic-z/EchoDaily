@@ -1,77 +1,80 @@
-import { useState } from 'react';
-import { Download, Upload, FileText, X } from 'lucide-react';
-import { save, open } from '@tauri-apps/plugin-dialog';
-import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
-import { exportData, importData } from '../lib/api';
-import type { ImportOptions } from '../types';
+import { useState } from 'react'
+import { Download, Upload, FileText, X } from 'lucide-react'
+import { save, open } from '@tauri-apps/plugin-dialog'
+import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs'
+import { exportData, importData } from '../lib/api'
+import type { ImportOptions } from '../types'
 
 interface DataSettingsDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
 }
 
 export function DataSettingsDialog({ isOpen, onClose }: DataSettingsDialogProps) {
-  const [isExporting, setIsExporting] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [overwrite, setOverwrite] = useState(false);
-  const [includeAiOps, setIncludeAiOps] = useState(true);
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [overwrite, setOverwrite] = useState(false)
+  const [includeAiOps, setIncludeAiOps] = useState(true)
 
   const handleExport = async () => {
-    setIsExporting(true);
+    setIsExporting(true)
     try {
-      const jsonData = await exportData();
-      const defaultFileName = `echo-daily-backup-${new Date().toISOString().split('T')[0]}.json`;
+      const jsonData = await exportData()
+      const defaultFileName = `echo-daily-backup-${new Date().toISOString().split('T')[0]}.json`
       const filePath = await save({
         defaultPath: defaultFileName,
-        filters: [{ name: 'JSON', extensions: ['json'] }]
-      });
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      })
 
       if (filePath) {
-        await writeTextFile(filePath, jsonData);
+        await writeTextFile(filePath, jsonData)
       }
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('Export failed:', error)
     } finally {
-      setIsExporting(false);
+      setIsExporting(false)
     }
-  };
+  }
 
   const handleImport = async () => {
-    setIsImporting(true);
+    setIsImporting(true)
     try {
       const filePath = await open({
         multiple: false,
-        filters: [{ name: 'JSON', extensions: ['json'] }]
-      });
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      })
 
       if (!filePath || typeof filePath !== 'string') {
-        setIsImporting(false);
-        return;
+        setIsImporting(false)
+        return
       }
 
-      const text = await readTextFile(filePath);
+      const text = await readTextFile(filePath)
       const options: ImportOptions = {
         overwrite,
         include_ai_operations: includeAiOps,
-      };
+      }
 
-      const count = await importData(text, options);
-      alert(`Successfully imported ${count} ${count === 1 ? 'entry' : 'entries'}!`);
+      const count = await importData(text, options)
+      alert(`Successfully imported ${count} ${count === 1 ? 'entry' : 'entries'}!`)
 
       setTimeout(() => {
-        window.location.reload();
-      }, 500);
+        window.location.reload()
+      }, 500)
     } catch (error) {
-      alert(`Import failed: ${error}`);
+      alert(`Import failed: ${error}`)
     } finally {
-      setIsImporting(false);
+      setIsImporting(false)
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
       <div
         className="bg-white rounded-xl shadow-2xl w-[480px] mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -82,10 +85,7 @@ export function DataSettingsDialog({ isOpen, onClose }: DataSettingsDialogProps)
             <FileText className="w-4 h-4 text-accent-blue" />
             <h2 className="text-base font-semibold text-ink-primary">Data Management</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-stone-100 transition-colors"
-          >
+          <button onClick={onClose} className="p-1 rounded hover:bg-stone-100 transition-colors">
             <X className="w-4 h-4 text-stone-500" />
           </button>
         </div>
@@ -140,7 +140,9 @@ export function DataSettingsDialog({ isOpen, onClose }: DataSettingsDialogProps)
                     onChange={(e) => setOverwrite(e.target.checked)}
                     className="w-3.5 h-3.5 rounded border-stone-300 text-accent-blue focus:ring-accent-blue"
                   />
-                  <span className="text-xs text-stone-700 group-hover:text-stone-900">Overwrite existing</span>
+                  <span className="text-xs text-stone-700 group-hover:text-stone-900">
+                    Overwrite existing
+                  </span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer group">
                   <input
@@ -149,7 +151,9 @@ export function DataSettingsDialog({ isOpen, onClose }: DataSettingsDialogProps)
                     onChange={(e) => setIncludeAiOps(e.target.checked)}
                     className="w-3.5 h-3.5 rounded border-stone-300 text-accent-blue focus:ring-accent-blue"
                   />
-                  <span className="text-xs text-stone-700 group-hover:text-stone-900">Include AI history</span>
+                  <span className="text-xs text-stone-700 group-hover:text-stone-900">
+                    Include AI history
+                  </span>
                 </label>
               </div>
 
@@ -176,5 +180,5 @@ export function DataSettingsDialog({ isOpen, onClose }: DataSettingsDialogProps)
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,64 +1,64 @@
-import { useState, useEffect } from 'react';
-import { X, Wand2 } from 'lucide-react';
-import { getAISettings, saveAISettings } from '../lib/api';
+import { useState, useEffect } from 'react'
+import { X, Wand2 } from 'lucide-react'
+import { getAISettings, saveAISettings } from '../lib/api'
 
 interface Props {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
 }
 
 export function AISettingsDialog({ isOpen, onClose }: Props) {
-  const [settings, setSettings] = useState({ provider: 'zhipu', model: 'glm-4-flash', apiKey: '' });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [settings, setSettings] = useState({ provider: 'zhipu', model: 'glm-4-flash', apiKey: '' })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
-      loadSettings();
+      loadSettings()
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   const loadSettings = async () => {
     try {
-      const current = await getAISettings();
+      const current = await getAISettings()
       if (current) {
-        setSettings({ ...current, apiKey: '' }); // Don't load actual API key
+        setSettings({ ...current, apiKey: '' }) // Don't load actual API key
       }
     } catch (err) {
-      console.error('Failed to load AI settings:', err);
+      console.error('Failed to load AI settings:', err)
     }
-  };
+  }
 
   const handleSave = async () => {
     if (!settings.apiKey.trim()) {
-      setError('API Key is required');
-      return;
+      setError('API Key is required')
+      return
     }
 
-    setIsLoading(true);
-    setError(null);
-    setSuccess(false);
+    setIsLoading(true)
+    setError(null)
+    setSuccess(false)
 
     try {
       await saveAISettings({
         provider: settings.provider,
         model: settings.model,
         apiKey: settings.apiKey.trim(),
-      });
-      setSuccess(true);
+      })
+      setSuccess(true)
       setTimeout(() => {
-        onClose();
-        setSuccess(false);
-      }, 1000);
+        onClose()
+        setSuccess(false)
+      }, 1000)
     } catch (err) {
-      setError(String(err));
+      setError(String(err))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
@@ -78,9 +78,7 @@ export function AISettingsDialog({ isOpen, onClose }: Props) {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              Provider
-            </label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">Provider</label>
             <select
               value={settings.provider}
               disabled
@@ -92,9 +90,7 @@ export function AISettingsDialog({ isOpen, onClose }: Props) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              Model
-            </label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">Model</label>
             <select
               value={settings.model}
               disabled
@@ -106,9 +102,7 @@ export function AISettingsDialog({ isOpen, onClose }: Props) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              API Key
-            </label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">API Key</label>
             <input
               type="password"
               value={settings.apiKey}
@@ -161,5 +155,5 @@ export function AISettingsDialog({ isOpen, onClose }: Props) {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,16 +1,16 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
-import { useEffect, useState } from 'react';
-import { useAppStore } from '../store/useAppStore';
-import { format } from 'date-fns';
-import { useAutosave } from '../hooks/useAutosave';
-import { getEntry, deleteEntry, upsertEntryMood } from '../lib/api';
-import { Trash2, Heading1, Heading2, Heading3, List, ListOrdered, Bold, Italic } from 'lucide-react';
-import { SelectionMenu } from './SelectionMenu';
-import { TTSPlayer } from './TTSPlayer';
-import { MoodSelector } from './MoodSelector';
-import { type MoodType } from '../types';
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Placeholder from '@tiptap/extension-placeholder'
+import { useEffect, useState } from 'react'
+import { useAppStore } from '../store/useAppStore'
+import { format } from 'date-fns'
+import { useAutosave } from '../hooks/useAutosave'
+import { getEntry, deleteEntry, upsertEntryMood } from '../lib/api'
+import { Trash2, Heading1, Heading2, Heading3, List, ListOrdered, Bold, Italic } from 'lucide-react'
+import { SelectionMenu } from './SelectionMenu'
+import { TTSPlayer } from './TTSPlayer'
+import { MoodSelector } from './MoodSelector'
+import { type MoodType } from '../types'
 
 /**
  * Recursively filters out unsupported TipTap nodes from content.
@@ -20,25 +20,25 @@ import { type MoodType } from '../types';
 function filterUnsupportedNodes(content: any): any {
   // Handle arrays (content is typically an array of nodes)
   if (Array.isArray(content)) {
-    return content.map(filterUnsupportedNodes).filter(Boolean);
+    return content.map(filterUnsupportedNodes).filter(Boolean)
   }
 
   // Handle TipTap node objects (have a 'type' property)
   if (content && typeof content === 'object' && content.type) {
     // Filter out image nodes (and any other unsupported node types)
     if (content.type === 'image') {
-      return null;
+      return null
     }
 
     // Recursively filter nested content
-    const filtered = { ...content };
+    const filtered = { ...content }
     if (filtered.content) {
-      filtered.content = filterUnsupportedNodes(filtered.content);
+      filtered.content = filterUnsupportedNodes(filtered.content)
     }
-    return filtered;
+    return filtered
   }
 
-  return content;
+  return content
 }
 
 const editorStyles = `
@@ -145,7 +145,7 @@ const editorStyles = `
     height: 0;
     pointer-events: none;
   }
-`;
+`
 
 export function Editor() {
   const {
@@ -160,113 +160,116 @@ export function Editor() {
     setCurrentEntry,
     markDirty,
     clearDirty,
-  } = useAppStore();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [entryText, setEntryText] = useState('');
-  const [currentMood, setCurrentMood] = useState<MoodType | undefined>(undefined);
+  } = useAppStore()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [entryText, setEntryText] = useState('')
+  const [currentMood, setCurrentMood] = useState<MoodType | undefined>(undefined)
 
   // Update local mood state when entry changes
   useEffect(() => {
-    setCurrentMood(currentEntry?.mood as MoodType | undefined);
-  }, [currentEntry]);
+    setCurrentMood(currentEntry?.mood as MoodType | undefined)
+  }, [currentEntry])
 
   // Handle mood change
   const handleMoodChange = async (mood: MoodType | undefined) => {
-    setCurrentMood(mood);
+    setCurrentMood(mood)
     try {
-      const updatedEntry = await upsertEntryMood(selectedDate, mood, undefined);
-      setCurrentEntry(updatedEntry);
+      const updatedEntry = await upsertEntryMood(selectedDate, mood, undefined)
+      setCurrentEntry(updatedEntry)
     } catch (error) {
-      console.error('Failed to save mood:', error);
+      console.error('Failed to save mood:', error)
       // Revert on error
-      setCurrentMood(currentEntry?.mood as MoodType | undefined);
+      setCurrentMood(currentEntry?.mood as MoodType | undefined)
     }
-  };
+  }
 
   // Selection menu state
-  const [showSelectionMenu, setShowSelectionMenu] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-  const [selectedText, setSelectedText] = useState('');
+  const [showSelectionMenu, setShowSelectionMenu] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
+  const [selectedText, setSelectedText] = useState('')
 
-  const { flushNow } = useAutosave();
+  const { flushNow } = useAutosave()
 
   useEffect(() => {
-    if (!pendingSelectedDate) return;
+    if (!pendingSelectedDate) return
     if (pendingSelectedDate === selectedDate) {
-      clearPendingSelectDate();
-      return;
+      clearPendingSelectDate()
+      return
     }
 
     const switchDate = async () => {
-      const ok = await flushNow();
+      const ok = await flushNow()
       if (!ok) {
-        clearPendingSelectDate();
-        return;
+        clearPendingSelectDate()
+        return
       }
 
-      setSelectedDate(pendingSelectedDate);
-      clearPendingSelectDate();
-    };
+      setSelectedDate(pendingSelectedDate)
+      clearPendingSelectDate()
+    }
 
-    void switchDate();
-  }, [clearPendingSelectDate, flushNow, pendingSelectedDate, selectedDate, setSelectedDate]);
+    void switchDate()
+  }, [clearPendingSelectDate, flushNow, pendingSelectedDate, selectedDate, setSelectedDate])
 
   const handleDelete = async () => {
-    setIsDeleting(true);
+    setIsDeleting(true)
     try {
-      await deleteEntry(selectedDate);
+      await deleteEntry(selectedDate)
       // Clear editor and state
       if (editor) {
-        editor.commands.clearContent(false);
+        editor.commands.clearContent(false)
       }
-      setEditorContent({ type: 'doc', content: [] });
-      setCurrentEntry(null);
-      clearDirty();
-      setSaveStatus('idle');
-      setShowDeleteConfirm(false);
+      setEditorContent({ type: 'doc', content: [] })
+      setCurrentEntry(null)
+      clearDirty()
+      setSaveStatus('idle')
+      setShowDeleteConfirm(false)
     } catch (error) {
-      console.error('Failed to delete entry:', error);
+      console.error('Failed to delete entry:', error)
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(false)
     }
-  };
+  }
 
   // Handle selection change to show AI menu
   const handleSelectionUpdate = ({ editor }: { editor: any }) => {
-    const { from, to, empty } = editor.state.selection;
+    const { from, to, empty } = editor.state.selection
 
     // Only show menu when there's a non-empty selection
     if (empty || from === null || to === null) {
-      setShowSelectionMenu(false);
-      return;
+      setShowSelectionMenu(false)
+      return
     }
 
-    const text = editor.state.doc.textBetween(from, to);
+    const text = editor.state.doc.textBetween(from, to)
     if (text.trim().length === 0) {
-      setShowSelectionMenu(false);
-      return;
+      setShowSelectionMenu(false)
+      return
     }
 
-    setSelectedText(text);
+    setSelectedText(text)
 
     // Calculate menu position
-    const coords = editor.view.coordsAtPos(from);
+    const coords = editor.view.coordsAtPos(from)
     if (coords) {
-      setMenuPosition({ x: coords.left, y: coords.top });
-      setShowSelectionMenu(true);
+      setMenuPosition({ x: coords.left, y: coords.top })
+      setShowSelectionMenu(true)
     }
-  };
+  }
 
   // Handle AI result replacement
   const handleReplaceText = (newText: string) => {
     if (editor) {
-      editor.commands.insertContentAt({
-        from: editor.state.selection.from,
-        to: editor.state.selection.to,
-      }, newText);
+      editor.commands.insertContentAt(
+        {
+          from: editor.state.selection.from,
+          to: editor.state.selection.to,
+        },
+        newText
+      )
     }
-  };
+  }
 
   const editor = useEditor({
     extensions: [
@@ -289,72 +292,72 @@ export function Editor() {
     ],
     content: editorContent || { type: 'doc', content: [] },
     onUpdate: ({ editor }) => {
-      const json = editor.getJSON();
-      setEditorContent(json);
+      const json = editor.getJSON()
+      setEditorContent(json)
 
       // Extract plain text for TTS
-      const text = editor.getText();
-      setEntryText(text);
+      const text = editor.getText()
+      setEntryText(text)
 
-      markDirty(selectedDate);
-      setSaveStatus('idle');
+      markDirty(selectedDate)
+      setSaveStatus('idle')
     },
     onSelectionUpdate: handleSelectionUpdate,
     onBlur: () => {
-      void flushNow();
+      void flushNow()
     },
     editorProps: {
       attributes: {
         class: 'focus:outline-none',
       },
     },
-  });
+  })
 
   useEffect(() => {
     const loadEntry = async () => {
       try {
-        const entry = await getEntry(selectedDate);
-        setCurrentEntry(entry);
+        const entry = await getEntry(selectedDate)
+        setCurrentEntry(entry)
       } catch (error) {
-        console.error('Failed to load entry:', error);
+        console.error('Failed to load entry:', error)
       }
-    };
+    }
 
-    loadEntry();
-  }, [selectedDate, setCurrentEntry]);
+    loadEntry()
+  }, [selectedDate, setCurrentEntry])
 
   useEffect(() => {
     if (editor && currentEntry?.content_json) {
       try {
-        const content = JSON.parse(currentEntry.content_json);
+        const content = JSON.parse(currentEntry.content_json)
         // Filter out unsupported nodes (e.g., image nodes) to prevent TipTap warnings
-        const filteredContent = filterUnsupportedNodes(content);
-        editor.commands.setContent(filteredContent, { emitUpdate: false });
-        setEditorContent(filteredContent);
+        const filteredContent = filterUnsupportedNodes(content)
+        editor.commands.setContent(filteredContent, { emitUpdate: false })
+        setEditorContent(filteredContent)
 
         // Extract plain text for TTS
-        const text = editor.getText();
-        setEntryText(text);
+        const text = editor.getText()
+        setEntryText(text)
 
-        clearDirty();
-        setSaveStatus('idle');
+        clearDirty()
+        setSaveStatus('idle')
       } catch {
-        editor.commands.clearContent(false);
-        setEditorContent({ type: 'doc', content: [] });
-        setEntryText('');
-        clearDirty();
-        setSaveStatus('idle');
+        editor.commands.clearContent(false)
+        setEditorContent({ type: 'doc', content: [] })
+        setEntryText('')
+        clearDirty()
+        setSaveStatus('idle')
       }
     } else if (editor && !currentEntry) {
-      editor.commands.clearContent(false);
-      setEditorContent({ type: 'doc', content: [] });
-      setEntryText('');
-      clearDirty();
-      setSaveStatus('idle');
+      editor.commands.clearContent(false)
+      setEditorContent({ type: 'doc', content: [] })
+      setEntryText('')
+      clearDirty()
+      setSaveStatus('idle')
     }
-  }, [clearDirty, currentEntry, editor, setEditorContent, setSaveStatus]);
+  }, [clearDirty, currentEntry, editor, setEditorContent, setSaveStatus])
 
-  const displayDate = new Date(selectedDate + 'T00:00:00');
+  const displayDate = new Date(selectedDate + 'T00:00:00')
 
   // Toolbar button component
   const ToolbarButton = ({
@@ -363,23 +366,21 @@ export function Editor() {
     children,
     title,
   }: {
-    onClick: () => void;
-    isActive?: boolean;
-    children: React.ReactNode;
-    title: string;
+    onClick: () => void
+    isActive?: boolean
+    children: React.ReactNode
+    title: string
   }) => (
     <button
       onClick={onClick}
       className={`p-2 rounded-lg transition-colors ${
-        isActive
-          ? 'bg-accent-blue text-white'
-          : 'hover:bg-white/60 text-stone-600'
+        isActive ? 'bg-accent-blue text-white' : 'hover:bg-white/60 text-stone-600'
       }`}
       title={title}
     >
       {children}
     </button>
-  );
+  )
 
   return (
     <>
@@ -388,9 +389,7 @@ export function Editor() {
         <div className="h-12 border-b border-border/40 bg-paper-bg px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-ink-secondary">
-                {format(displayDate, 'EEEE')}
-              </span>
+              <span className="text-sm text-ink-secondary">{format(displayDate, 'EEEE')}</span>
               <span className="text-ink-primary font-medium">
                 {format(displayDate, 'MMM d, yyyy')}
               </span>
@@ -515,7 +514,8 @@ export function Editor() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 paper-shadow p-6">
             <h3 className="text-lg font-semibold text-stone-800 mb-2">Delete entry</h3>
             <p className="text-stone-600 mb-6">
-              Delete the entry for {format(displayDate, 'MMM d, yyyy')}? This action cannot be undone.
+              Delete the entry for {format(displayDate, 'MMM d, yyyy')}? This action cannot be
+              undone.
             </p>
             <div className="flex items-center justify-end gap-2">
               <button
@@ -537,5 +537,5 @@ export function Editor() {
         </div>
       )}
     </>
-  );
+  )
 }

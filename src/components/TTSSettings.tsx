@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { X, Volume2 } from 'lucide-react';
-import { getTTSSettings, saveTTSSettings, listTTSVoices, listTTSProviders } from '../lib/api';
-import type { TTSSettings, TTSVoice } from '../types';
+import { useState, useEffect } from 'react'
+import { X, Volume2 } from 'lucide-react'
+import { getTTSSettings, saveTTSSettings, listTTSVoices, listTTSProviders } from '../lib/api'
+import type { TTSSettings, TTSVoice } from '../types'
 
 interface Props {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
 }
 
 const PROVIDER_INFO = {
@@ -27,7 +27,7 @@ const PROVIDER_INFO = {
     pricing: 'Character-based billing. Check Murf.ai for detailed pricing.',
     speedSupported: true,
   },
-};
+}
 
 export function TTSSettingsDialog({ isOpen, onClose }: Props) {
   const [settings, setSettings] = useState<TTSSettings>({
@@ -36,149 +36,155 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
     apiKey: '',
     voice: 'cherry',
     speed: 1.0,
-  });
-  const [availableProviders, setAvailableProviders] = useState<string[]>([]);
-  const [voices, setVoices] = useState<TTSVoice[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  })
+  const [availableProviders, setAvailableProviders] = useState<string[]>([])
+  const [voices, setVoices] = useState<TTSVoice[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
-      loadProviders();
-      loadSettings();
+      loadProviders()
+      loadSettings()
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Load voices when provider changes
   useEffect(() => {
     if (isOpen && settings.provider) {
-      loadVoices();
+      loadVoices()
     }
-  }, [settings.provider, isOpen]);
+  }, [settings.provider, isOpen])
 
   const loadProviders = async () => {
     try {
-      const providers = await listTTSProviders();
-      setAvailableProviders(providers);
+      const providers = await listTTSProviders()
+      setAvailableProviders(providers)
     } catch (err) {
-      console.error('Failed to load TTS providers:', err);
-      setAvailableProviders(['qwen', 'murf']);
+      console.error('Failed to load TTS providers:', err)
+      setAvailableProviders(['qwen', 'murf'])
     }
-  };
+  }
 
   const loadSettings = async () => {
     try {
-      const current = await getTTSSettings(settings.provider);
+      const current = await getTTSSettings(settings.provider)
       if (current) {
         setSettings({
           ...current,
           apiKey: '',
           voice: current.voice || 'cherry',
           speed: current.speed ?? 1.0,
-        });
+        })
       }
     } catch (err) {
-      console.error('Failed to load TTS settings:', err);
+      console.error('Failed to load TTS settings:', err)
     }
-  };
+  }
 
   const loadVoices = async () => {
     try {
-      const availableVoices = await listTTSVoices(settings.provider);
-      setVoices(availableVoices);
+      const availableVoices = await listTTSVoices(settings.provider)
+      setVoices(availableVoices)
 
       // Set default voice if current voice is empty or not available
       if (availableVoices.length > 0) {
-        const currentVoiceValid = availableVoices.some(v => v.id === settings.voice);
+        const currentVoiceValid = availableVoices.some((v) => v.id === settings.voice)
         if (!settings.voice || !currentVoiceValid) {
-          setSettings(prev => ({
+          setSettings((prev) => ({
             ...prev,
             voice: availableVoices[0].id,
-          }));
+          }))
         }
       }
     } catch (err) {
-      console.error('Failed to load TTS voices:', err);
+      console.error('Failed to load TTS voices:', err)
     }
-  };
+  }
 
   const handleProviderChange = async (newProvider: string) => {
     // Get provider info and update provider, model
-    const providerModel = PROVIDER_INFO[newProvider as keyof typeof PROVIDER_INFO]?.model || 'qwen3-tts-flash';
+    const providerModel =
+      PROVIDER_INFO[newProvider as keyof typeof PROVIDER_INFO]?.model || 'qwen3-tts-flash'
 
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
       provider: newProvider,
       model: providerModel,
       // Don't reset voice yet - let loadVoices handle it
-    }));
+    }))
 
     // Load voices for new provider
     try {
-      const availableVoices = await listTTSVoices(newProvider);
-      setVoices(availableVoices);
+      const availableVoices = await listTTSVoices(newProvider)
+      setVoices(availableVoices)
 
       // Set first voice as default
       if (availableVoices.length > 0) {
-        setSettings(prev => ({
+        setSettings((prev) => ({
           ...prev,
           provider: newProvider,
           model: providerModel,
           voice: availableVoices[0].id,
-        }));
+        }))
       }
     } catch (err) {
-      console.error('Failed to load TTS voices:', err);
+      console.error('Failed to load TTS voices:', err)
     }
-  };
+  }
 
   const handleSave = async () => {
     if (!settings.apiKey.trim()) {
-      setError('API Key is required');
-      return;
+      setError('API Key is required')
+      return
     }
 
     if (!settings.voice) {
-      setError('Please select a voice');
-      return;
+      setError('Please select a voice')
+      return
     }
 
-    setIsLoading(true);
-    setError(null);
-    setSuccess(false);
+    setIsLoading(true)
+    setError(null)
+    setSuccess(false)
 
     try {
       await saveTTSSettings({
         provider: settings.provider,
-        model: PROVIDER_INFO[settings.provider as keyof typeof PROVIDER_INFO]?.model || 'qwen3-tts-flash',
+        model:
+          PROVIDER_INFO[settings.provider as keyof typeof PROVIDER_INFO]?.model ||
+          'qwen3-tts-flash',
         apiKey: settings.apiKey.trim(),
         voice: settings.voice,
         speed: settings.speed,
-      });
-      setSuccess(true);
+      })
+      setSuccess(true)
       setTimeout(() => {
-        onClose();
-        setSuccess(false);
-      }, 1000);
+        onClose()
+        setSuccess(false)
+      }, 1000)
     } catch (err) {
-      setError(String(err));
+      setError(String(err))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
-  const currentProviderInfo = PROVIDER_INFO[settings.provider as keyof typeof PROVIDER_INFO];
+  const currentProviderInfo = PROVIDER_INFO[settings.provider as keyof typeof PROVIDER_INFO]
 
   // Group voices by language
-  const voicesByLanguage = voices.reduce((acc, voice) => {
-    const lang = voice.language;
-    if (!acc[lang]) acc[lang] = [];
-    acc[lang].push(voice);
-    return acc;
-  }, {} as Record<string, TTSVoice[]>);
+  const voicesByLanguage = voices.reduce(
+    (acc, voice) => {
+      const lang = voice.language
+      if (!acc[lang]) acc[lang] = []
+      acc[lang].push(voice)
+      return acc
+    },
+    {} as Record<string, TTSVoice[]>
+  )
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
@@ -199,31 +205,25 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
         <div className="space-y-4">
           {/* Provider Selection */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              Provider
-            </label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">Provider</label>
             <select
               value={settings.provider}
               onChange={(e) => handleProviderChange(e.target.value)}
               className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
               disabled={isLoading}
             >
-              {availableProviders.map(provider => (
+              {availableProviders.map((provider) => (
                 <option key={provider} value={provider}>
                   {PROVIDER_INFO[provider as keyof typeof PROVIDER_INFO]?.name || provider}
                 </option>
               ))}
             </select>
-            <p className="text-xs text-stone-500 mt-1">
-              {currentProviderInfo?.description}
-            </p>
+            <p className="text-xs text-stone-500 mt-1">{currentProviderInfo?.description}</p>
           </div>
 
           {/* Model Selection */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              Model
-            </label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">Model</label>
             <select
               value={settings.model}
               disabled
@@ -232,15 +232,15 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
               <option value={currentProviderInfo?.model}>{currentProviderInfo?.model}</option>
             </select>
             <p className="text-xs text-stone-500 mt-1">
-              {settings.provider === 'qwen' ? 'Fast synthesis with 49 voice options' : 'High-quality voices with expressive styles'}
+              {settings.provider === 'qwen'
+                ? 'Fast synthesis with 49 voice options'
+                : 'High-quality voices with expressive styles'}
             </p>
           </div>
 
           {/* Voice Selection */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              Voice
-            </label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">Voice</label>
             <select
               value={settings.voice}
               onChange={(e) => setSettings({ ...settings, voice: e.target.value })}
@@ -291,9 +291,7 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
 
           {/* API Key */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              API Key
-            </label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">API Key</label>
             <input
               type="password"
               value={settings.apiKey}
@@ -353,5 +351,5 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
         </div>
       </div>
     </div>
-  );
+  )
 }

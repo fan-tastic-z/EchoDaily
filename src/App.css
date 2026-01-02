@@ -5,7 +5,13 @@
 @layer base {
   body {
     @apply bg-paper-bg text-ink-primary antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
   }
 }
 
@@ -71,4 +77,3 @@
   background: linear-gradient(transparent 60%, rgba(74, 111, 165, 0.2) 60%);
   padding: 0 2px;
 }
-

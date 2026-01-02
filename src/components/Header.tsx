@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { Calendar, Wand2, Volume2, Database } from 'lucide-react';
-import { AISettingsDialog } from './AISettings';
-import { TTSSettingsDialog } from './TTSSettings';
-import { DataSettingsDialog } from './DataSettings';
+import { useState } from 'react'
+import { Calendar, Wand2, Volume2, Database } from 'lucide-react'
+import { AISettingsDialog } from './AISettings'
+import { TTSSettingsDialog } from './TTSSettings'
+import { DataSettingsDialog } from './DataSettings'
 
 export function Header() {
-  const [showAISettings, setShowAISettings] = useState(false);
-  const [showTTSSettings, setShowTTSSettings] = useState(false);
-  const [showDataSettings, setShowDataSettings] = useState(false);
+  const [showAISettings, setShowAISettings] = useState(false)
+  const [showTTSSettings, setShowTTSSettings] = useState(false)
+  const [showDataSettings, setShowDataSettings] = useState(false)
 
   return (
     <>
@@ -45,5 +45,5 @@ export function Header() {
       <TTSSettingsDialog isOpen={showTTSSettings} onClose={() => setShowTTSSettings(false)} />
       <DataSettingsDialog isOpen={showDataSettings} onClose={() => setShowDataSettings(false)} />
     </>
-  );
+  )
 }

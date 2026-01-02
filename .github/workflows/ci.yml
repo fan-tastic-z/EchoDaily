@@ -92,6 +92,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run ESLint (if configured)
-        run: echo "Linting completed (configure ESLint as needed)"
-        continue-on-error: true
+      - name: Run ESLint
+        run: pnpm eslint src/ --max-warnings=50
+
+      - name: Check Prettier formatting
+        run: pnpm prettier --check src/

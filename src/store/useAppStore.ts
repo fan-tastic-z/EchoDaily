@@ -1,38 +1,38 @@
-import { create } from 'zustand';
-import { format } from 'date-fns';
-import type { DiaryEntry, SaveStatus } from '../types';
+import { create } from 'zustand'
+import { format } from 'date-fns'
+import type { DiaryEntry, SaveStatus } from '../types'
 
 interface AppState {
-  selectedDate: string;
-  setSelectedDate: (date: string) => void;
-  pendingSelectedDate: string | null;
-  requestSelectDate: (date: string) => void;
-  clearPendingSelectDate: () => void;
+  selectedDate: string
+  setSelectedDate: (date: string) => void
+  pendingSelectedDate: string | null
+  requestSelectDate: (date: string) => void
+  clearPendingSelectDate: () => void
 
-  currentEntry: DiaryEntry | null;
-  setCurrentEntry: (entry: DiaryEntry | null) => void;
+  currentEntry: DiaryEntry | null
+  setCurrentEntry: (entry: DiaryEntry | null) => void
 
-  saveStatus: SaveStatus;
-  setSaveStatus: (status: SaveStatus) => void;
-  lastSaveError: string | null;
-  setLastSaveError: (message: string | null) => void;
+  saveStatus: SaveStatus
+  setSaveStatus: (status: SaveStatus) => void
+  lastSaveError: string | null
+  setLastSaveError: (message: string | null) => void
 
-  editorContent: Record<string, unknown>;
-  setEditorContent: (content: Record<string, unknown>) => void;
+  editorContent: Record<string, unknown>
+  setEditorContent: (content: Record<string, unknown>) => void
 
-  editRevision: number;
+  editRevision: number
 
-  isDirty: boolean;
-  dirtyDate: string | null;
-  markDirty: (date: string) => void;
-  clearDirty: () => void;
-  clearDirtyIf: (date: string) => void;
+  isDirty: boolean
+  dirtyDate: string | null
+  markDirty: (date: string) => void
+  clearDirty: () => void
+  clearDirtyIf: (date: string) => void
 
-  currentMonth: string; // yyyy-MM
-  setCurrentMonth: (month: string) => void;
+  currentMonth: string // yyyy-MM
+  setCurrentMonth: (month: string) => void
 
-  monthEntries: DiaryEntry[];
-  setMonthEntries: (entries: DiaryEntry[]) => void;
+  monthEntries: DiaryEntry[]
+  setMonthEntries: (entries: DiaryEntry[]) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -66,8 +66,8 @@ export const useAppStore = create<AppState>((set) => ({
   clearDirty: () => set({ isDirty: false, dirtyDate: null }),
   clearDirtyIf: (date) =>
     set((state) => {
-      if (!state.isDirty || state.dirtyDate !== date) return state;
-      return { isDirty: false, dirtyDate: null };
+      if (!state.isDirty || state.dirtyDate !== date) return state
+      return { isDirty: false, dirtyDate: null }
     }),
 
   currentMonth: format(new Date(), 'yyyy-MM'),
@@ -75,4 +75,4 @@ export const useAppStore = create<AppState>((set) => ({
 
   monthEntries: [],
   setMonthEntries: (entries) => set({ monthEntries: entries }),
-}));
+}))

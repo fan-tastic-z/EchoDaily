@@ -1,16 +1,16 @@
-import { useEffect } from 'react';
-import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
-import { Editor } from './components/Editor';
-import { SaveIndicator } from './components/SaveIndicator';
-import { initDb } from './lib/api';
-import './App.css';
+import { useEffect } from 'react'
+import { Header } from './components/Header'
+import { Sidebar } from './components/Sidebar'
+import { Editor } from './components/Editor'
+import { SaveIndicator } from './components/SaveIndicator'
+import { initDb } from './lib/api'
+import './App.css'
 
 function App() {
   // Initialize the database
   useEffect(() => {
-    initDb().catch(console.error);
-  }, []);
+    initDb().catch(console.error)
+  }, [])
 
   return (
     <div className="h-screen flex flex-col paper-texture bg-paper-bg">
@@ -25,7 +25,7 @@ function App() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

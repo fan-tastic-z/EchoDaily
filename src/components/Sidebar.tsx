@@ -1,10 +1,19 @@
-import { ChevronLeft, ChevronRight, Sparkles, Search, X, BookOpen, Flame, TrendingUp } from 'lucide-react';
-import { useAppStore } from '../store/useAppStore';
-import { addMonths, format, getDaysInMonth } from 'date-fns';
-import { useEffect, useState } from 'react';
-import { listEntries, searchEntries, getWritingStats } from '../lib/api';
-import { MOOD_OPTIONS } from '../types';
-import type { DiaryEntry, WritingStats } from '../types';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Search,
+  X,
+  BookOpen,
+  Flame,
+  TrendingUp,
+} from 'lucide-react'
+import { useAppStore } from '../store/useAppStore'
+import { addMonths, format, getDaysInMonth } from 'date-fns'
+import { useEffect, useState } from 'react'
+import { listEntries, searchEntries, getWritingStats } from '../lib/api'
+import { MOOD_OPTIONS } from '../types'
+import type { DiaryEntry, WritingStats } from '../types'
 
 // Mood colors for calendar badges
 const MOOD_COLORS = {
@@ -13,103 +22,110 @@ const MOOD_COLORS = {
   neutral: { bg: '#f3f4f6', border: '#9ca3af' },
   sad: { bg: '#e0e7ff', border: '#818cf8' },
   awful: { bg: '#fee2e2', border: '#f87171' },
-};
+}
 
 export function Sidebar() {
-  const { currentMonth, setCurrentMonth, selectedDate, requestSelectDate, monthEntries, setMonthEntries } = useAppStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<DiaryEntry[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [stats, setStats] = useState<WritingStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
+  const {
+    currentMonth,
+    setCurrentMonth,
+    selectedDate,
+    requestSelectDate,
+    monthEntries,
+    setMonthEntries,
+  } = useAppStore()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<DiaryEntry[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [stats, setStats] = useState<WritingStats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(true)
 
   // Load entries for the current month
   useEffect(() => {
     const loadMonthEntries = async () => {
       try {
-        const entries = await listEntries(currentMonth);
-        setMonthEntries(entries);
+        const entries = await listEntries(currentMonth)
+        setMonthEntries(entries)
       } catch (error) {
-        console.error('Failed to load month entries:', error);
+        console.error('Failed to load month entries:', error)
       }
-    };
+    }
 
-    loadMonthEntries();
-  }, [currentMonth, setMonthEntries]);
+    loadMonthEntries()
+  }, [currentMonth, setMonthEntries])
 
   // Handle search
   useEffect(() => {
     const handleSearch = async () => {
       if (!searchQuery.trim()) {
-        setSearchResults([]);
-        setIsSearching(false);
-        return;
+        setSearchResults([])
+        setIsSearching(false)
+        return
       }
 
-      setIsSearching(true);
+      setIsSearching(true)
       try {
-        const results = await searchEntries(searchQuery);
-        setSearchResults(results);
+        const results = await searchEntries(searchQuery)
+        setSearchResults(results)
       } catch (error) {
-        console.error('Failed to search entries:', error);
-        setSearchResults([]);
+        console.error('Failed to search entries:', error)
+        setSearchResults([])
       } finally {
-        setIsSearching(false);
+        setIsSearching(false)
       }
-    };
+    }
 
-    const timeoutId = setTimeout(handleSearch, 300);
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+    const timeoutId = setTimeout(handleSearch, 300)
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
 
   // Load writing statistics
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const data = await getWritingStats();
-        setStats(data);
+        const data = await getWritingStats()
+        setStats(data)
       } catch (error) {
-        console.error('Failed to load writing stats:', error);
+        console.error('Failed to load writing stats:', error)
       } finally {
-        setStatsLoading(false);
+        setStatsLoading(false)
       }
-    };
+    }
 
-    loadStats();
-  }, []);
+    loadStats()
+  }, [])
 
-  const [year, month] = currentMonth.split('-').map((part) => Number(part));
-  const monthStart = new Date(year, month - 1, 1);
-  const daysInMonth = getDaysInMonth(monthStart);
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const [year, month] = currentMonth.split('-').map((part) => Number(part))
+  const monthStart = new Date(year, month - 1, 1)
+  const daysInMonth = getDaysInMonth(monthStart)
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
 
   const prevMonth = () => {
-    setCurrentMonth(format(addMonths(monthStart, -1), 'yyyy-MM'));
-  };
+    setCurrentMonth(format(addMonths(monthStart, -1), 'yyyy-MM'))
+  }
 
   const nextMonth = () => {
-    setCurrentMonth(format(addMonths(monthStart, 1), 'yyyy-MM'));
-  };
+    setCurrentMonth(format(addMonths(monthStart, 1), 'yyyy-MM'))
+  }
 
   const formatDate = (day: number) => {
-    return `${currentMonth}-${String(day).padStart(2, '0')}`;
-  };
+    return `${currentMonth}-${String(day).padStart(2, '0')}`
+  }
 
-  const isSelected = (date: string) => date === selectedDate;
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const isToday = (date: string) => date === today;
+  const isSelected = (date: string) => date === selectedDate
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const isToday = (date: string) => date === today
 
   // Get mood info for a specific date
   const getMoodForDate = (date: string) => {
-    const entry = monthEntries.find(e => e.entry_date === date);
-    if (!entry?.mood) return null;
-    const moodOption = MOOD_OPTIONS.find(m => m.type === entry.mood);
+    const entry = monthEntries.find((e) => e.entry_date === date)
+    if (!entry?.mood) return null
+    const moodOption = MOOD_OPTIONS.find((m) => m.type === entry.mood)
     return {
       emoji: moodOption?.emoji,
       color: MOOD_COLORS[entry.mood as keyof typeof MOOD_COLORS],
-    };
-  };
+    }
+  }
 
   return (
     <aside className="w-64 border-r border-border/40 bg-paper-bg flex flex-col">
@@ -156,8 +172,8 @@ export function Sidebar() {
             {searchQuery && (
               <button
                 onClick={() => {
-                  setSearchQuery('');
-                  setSearchResults([]);
+                  setSearchQuery('')
+                  setSearchResults([])
                 }}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-stone-100 rounded"
               >
@@ -175,7 +191,7 @@ export function Sidebar() {
           <div className="mb-4">
             {searchQuery && searchResults.length === 0 && !isSearching && (
               <div className="text-center py-8 text-stone-400 text-sm">
-                No results found for "{searchQuery}"
+                No results found for &quot;{searchQuery}&quot;
               </div>
             )}
             {searchResults.length > 0 && (
@@ -187,10 +203,10 @@ export function Sidebar() {
                   <button
                     key={entry.id}
                     onClick={() => {
-                      requestSelectDate(entry.entry_date);
-                      setShowSearch(false);
-                      setSearchQuery('');
-                      setSearchResults([]);
+                      requestSelectDate(entry.entry_date)
+                      setShowSearch(false)
+                      setSearchQuery('')
+                      setSearchResults([])
                     }}
                     className={`w-full text-left p-3 rounded-lg transition-all ${
                       entry.entry_date === selectedDate
@@ -202,23 +218,24 @@ export function Sidebar() {
                       <span className="text-sm font-medium">
                         {format(new Date(entry.entry_date + 'T00:00:00'), 'MMM d, yyyy')}
                       </span>
-                      {entry.mood_emoji && (
-                        <span className="text-xs">{entry.mood_emoji}</span>
-                      )}
+                      {entry.mood_emoji && <span className="text-xs">{entry.mood_emoji}</span>}
                     </div>
-                    <div className={`text-xs truncate ${
-                      entry.entry_date === selectedDate ? 'text-white/80' : 'text-stone-500'
-                    }`}>
-                      {entry.content_json ? JSON.parse(entry.content_json).content?.[0]?.content?.[0]?.text || 'No content' : 'Empty entry'}
+                    <div
+                      className={`text-xs truncate ${
+                        entry.entry_date === selectedDate ? 'text-white/80' : 'text-stone-500'
+                      }`}
+                    >
+                      {entry.content_json
+                        ? JSON.parse(entry.content_json).content?.[0]?.content?.[0]?.text ||
+                          'No content'
+                        : 'Empty entry'}
                     </div>
                   </button>
                 ))}
               </div>
             )}
             {isSearching && (
-              <div className="text-center py-8 text-stone-400 text-sm">
-                Searching...
-              </div>
+              <div className="text-center py-8 text-stone-400 text-sm">Searching...</div>
             )}
           </div>
         )}
@@ -232,10 +249,10 @@ export function Sidebar() {
             </div>
           ))}
           {days.map((day) => {
-            const dateStr = formatDate(day);
-            const selected = isSelected(dateStr);
-            const isTodayDate = isToday(dateStr);
-            const moodInfo = getMoodForDate(dateStr);
+            const dateStr = formatDate(day)
+            const selected = isSelected(dateStr)
+            const isTodayDate = isToday(dateStr)
+            const moodInfo = getMoodForDate(dateStr)
 
             return (
               <button
@@ -244,11 +261,12 @@ export function Sidebar() {
                 className={`
                   relative aspect-square rounded-xl
                   transition-all duration-200 ease-out
-                  ${selected
-                    ? 'bg-accent-blue text-white shadow-lg scale-105'
-                    : moodInfo
-                      ? 'hover:scale-105 hover:shadow-md'
-                      : 'hover:bg-white/50 hover:scale-105'
+                  ${
+                    selected
+                      ? 'bg-accent-blue text-white shadow-lg scale-105'
+                      : moodInfo
+                        ? 'hover:scale-105 hover:shadow-md'
+                        : 'hover:bg-white/50 hover:scale-105'
                   }
                   ${isTodayDate && !selected ? 'ring-2 ring-accent-blue/40' : ''}
                 `}
@@ -261,9 +279,7 @@ export function Sidebar() {
                     : {}
                 }
               >
-                <span className={`text-sm ${selected ? 'font-semibold' : ''}`}>
-                  {day}
-                </span>
+                <span className={`text-sm ${selected ? 'font-semibold' : ''}`}>{day}</span>
 
                 {/* Mood indicator badge */}
                 {moodInfo && !selected && (
@@ -277,7 +293,7 @@ export function Sidebar() {
                   <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent-blue rounded-full" />
                 )}
               </button>
-            );
+            )
           })}
         </div>
 
@@ -290,8 +306,8 @@ export function Sidebar() {
             </div>
             <div className="flex flex-wrap gap-1">
               {MOOD_OPTIONS.map((mood) => {
-                const count = monthEntries.filter(e => e.mood === mood.type).length;
-                if (count === 0) return null;
+                const count = monthEntries.filter((e) => e.mood === mood.type).length
+                if (count === 0) return null
                 return (
                   <div
                     key={mood.type}
@@ -306,7 +322,7 @@ export function Sidebar() {
                       {count}
                     </span>
                   </div>
-                );
+                )
               })}
             </div>
           </div>
@@ -355,5 +371,5 @@ export function Sidebar() {
         )}
       </div>
     </aside>
-  );
+  )
 }
