@@ -1,0 +1,54 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Monochrome version - good for single-color contexts -->
+
+  <!-- Open book silhouette -->
+  <g>
+    <!-- Left page -->
+    <path d="M256 130
+             C205 130 155 150 115 175
+             L115 380
+             C155 350 205 330 256 330
+             L256 130Z"
+          fill="#2C2416"/>
+
+    <!-- Right page -->
+    <path d="M256 130
+             C307 130 357 150 397 175
+             L397 380
+             C357 350 307 330 256 330
+             L256 130Z"
+          fill="#2C2416"/>
+
+    <!-- Spine shadow -->
+    <rect x="254" y="130" width="4" height="200" fill="#1a1410" rx="1"/>
+
+    <!-- Page highlight -->
+    <path d="M256 130
+             C205 130 155 150 115 175
+             C120 170 130 165 140 162
+             L256 142Z"
+          fill="#3d3226" opacity="0.5"/>
+    <path d="M256 130
+             C307 130 357 150 397 175
+             C392 170 382 165 372 162
+             L256 142Z"
+          fill="#3d3226" opacity="0.5"/>
+  </g>
+
+  <!-- Echo waves -->
+  <g fill="none" stroke="#2C2416" stroke-width="5" stroke-linecap="round" opacity="0.6">
+    <path d="M185 255 Q168 255 156 242"/>
+    <path d="M168 255 Q145 255 128 235"/>
+    <path d="M327 255 Q344 255 356 242"/>
+    <path d="M344 255 Q367 255 384 235"/>
+  </g>
+
+  <!-- "E" monogram -->
+  <text x="256" y="275"
+        font-family="'Georgia', serif"
+        font-size="72"
+        font-weight="700"
+        font-style="italic"
+        fill="#F5F1E8"
+        text-anchor="middle">E</text>
+</svg>

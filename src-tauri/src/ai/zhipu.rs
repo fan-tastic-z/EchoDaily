@@ -27,19 +27,6 @@ impl ZhipuProvider {
         }
     }
 
-    pub fn with_model(api_key: Option<String>, model: String) -> Self {
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(30))
-            .build()
-            .unwrap_or_default();
-
-        Self {
-            api_key,
-            client,
-            default_model: model,
-        }
-    }
-
     fn build_prompt(&self, op_type: &str, text: &str, context: &Option<String>) -> String {
         match op_type {
             "polish" => {
@@ -83,7 +70,7 @@ impl ZhipuProvider {
             }
             "translate" => {
                 // Detect if text contains Chinese characters
-                let has_chinese = text.chars().any(|c| c >= '\u{4E00}' && c <= '\u{9FFF}');
+                let has_chinese = text.chars().any(|c| ('\u{4E00}'..='\u{9FFF}').contains(&c));
                 let target_lang = if has_chinese {
                     "English"
                 } else {
@@ -185,8 +172,7 @@ impl AIProvider for ZhipuProvider {
 
         let result = response
             .choices
-            .first()
-            .and_then(|c| Some(c.message.content.clone()))
+            .first().map(|c| c.message.content.clone())
             .unwrap_or_default();
 
         Ok(AIResponse {
@@ -217,29 +203,36 @@ struct RequestMessage {
 
 #[derive(Debug, Deserialize)]
 struct ChatCompletionResponse {
+    #[allow(dead_code)]
     id: String,
     model: String,
     choices: Vec<Choice>,
     usage: Usage,
+    #[allow(dead_code)]
     created: u64,
 }
 
 #[derive(Debug, Deserialize)]
 struct Choice {
+    #[allow(dead_code)]
     index: u32,
     message: ResponseMessage,
+    #[allow(dead_code)]
     finish_reason: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 struct ResponseMessage {
+    #[allow(dead_code)]
     role: String,
     content: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct Usage {
+    #[allow(dead_code)]
     prompt_tokens: u32,
+    #[allow(dead_code)]
     completion_tokens: u32,
     total_tokens: u32,
 }

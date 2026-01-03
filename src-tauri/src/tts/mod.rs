@@ -72,22 +72,3 @@ pub async fn get_provider(
 pub fn get_provider_no_auth(provider_type: TTSProviderType) -> Arc<dyn TTSProvider> {
     create_provider(provider_type, None)
 }
-
-/// Get the currently configured TTS provider (defaults to Qwen for backward compatibility)
-pub async fn get_current_provider() -> Result<Arc<dyn TTSProvider>, TTSError> {
-    get_provider(TTSProviderType::Qwen).await
-}
-
-/// Check if TTS is configured (any provider)
-pub fn is_configured() -> bool {
-    crate::keychain::get_tts_api_key().ok().flatten().is_some()
-        || crate::keychain::get_murf_api_key().ok().flatten().is_some()
-}
-
-/// Check if a specific provider is configured
-pub fn is_provider_configured(provider_type: TTSProviderType) -> bool {
-    match provider_type {
-        TTSProviderType::Qwen => crate::keychain::get_tts_api_key().ok().flatten().is_some(),
-        TTSProviderType::Murf => crate::keychain::get_murf_api_key().ok().flatten().is_some(),
-    }
-}

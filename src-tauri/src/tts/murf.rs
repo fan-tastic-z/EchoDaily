@@ -40,8 +40,10 @@ struct MurfTTSResponse {
     #[serde(alias = "audioLengthInSeconds")]
     audio_length_in_seconds: Option<f64>,
     #[serde(alias = "remainingCharacterCount")]
+    #[allow(dead_code)]
     remaining_character_count: Option<i64>,
     #[serde(default)]
+    #[allow(dead_code)]
     warning: Option<String>,
 }
 
@@ -133,18 +135,6 @@ impl TTSProvider for MurfTTSProvider {
 
     fn default_model(&self) -> &'static str {
         "GEN2"
-    }
-
-    fn is_configured(&self) -> bool {
-        // Check local api_key first
-        if let Some(key) = &self.api_key {
-            if !key.is_empty() {
-                return true;
-            }
-        }
-
-        // Check keychain
-        crate::keychain::get_murf_api_key().ok().flatten().is_some()
     }
 
     async fn synthesize(&self, request: TTSRequest) -> Result<TTSResponse, TTSError> {

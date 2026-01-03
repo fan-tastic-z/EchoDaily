@@ -1,0 +1,19 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" rx="7" fill="#4A6FA5"/>
+
+  <!-- Simplified book -->
+  <g fill="#F5F1E8">
+    <path d="M16 8 C12 8 8.5 9.5 6 11 L6 24 C8.5 22.5 12 21 16 21 Z"/>
+    <path d="M16 8 C20 8 23.5 9.5 26 11 L26 24 C23.5 22.5 20 21 16 21 Z"/>
+  </g>
+
+  <rect x="15.5" y="8" width="1" height="13" fill="#2C2416"/>
+
+  <!-- Tiny E -->
+  <text x="16" y="22"
+        font-family="serif"
+        font-size="6"
+        font-weight="bold"
+        fill="#F5F1E8"
+        text-anchor="middle">E</text>
+</svg>

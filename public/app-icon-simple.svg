@@ -1,0 +1,48 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A6FA5"/>
+      <stop offset="100%" style="stop-color:#3D5D8C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGrad)"/>
+
+  <!-- Open book silhouette -->
+  <g fill="#F5F1E8">
+    <!-- Left page -->
+    <path d="M256 150
+             C210 150 165 165 130 185
+             L130 370
+             C165 345 210 330 256 330
+             L256 150Z"/>
+
+    <!-- Right page -->
+    <path d="M256 150
+             C302 150 347 165 382 185
+             L382 370
+             C347 345 302 330 256 330
+             L256 150Z"/>
+  </g>
+
+  <!-- Center spine -->
+  <rect x="252" y="150" width="8" height="180" fill="#2C2416" rx="1"/>
+
+  <!-- Echo waves -->
+  <g fill="none" stroke="#F5F1E8" stroke-width="4" stroke-linecap="round" opacity="0.9">
+    <path d="M185 256 Q170 256 160 245"/>
+    <path d="M170 256 Q150 256 135 240"/>
+    <path d="M327 256 Q342 256 352 245"/>
+    <path d="M342 256 Q362 256 377 240"/>
+  </g>
+
+  <!-- "E" monogram -->
+  <text x="256" y="275"
+        font-family="'Georgia', serif"
+        font-size="64"
+        font-weight="700"
+        font-style="italic"
+        fill="#F5F1E8"
+        text-anchor="middle">E</text>
+</svg>

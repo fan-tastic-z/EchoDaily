@@ -34,11 +34,6 @@ pub fn delete_api_key() -> Result<(), AppError> {
     Ok(())
 }
 
-/// Check if an API key is configured
-pub fn has_api_key() -> bool {
-    get_api_key().unwrap_or(None).is_some()
-}
-
 /// ===== TTS API Key Management (Qwen) =====
 /// Get the TTS API key from secure storage (Qwen)
 pub fn get_tts_api_key() -> Result<Option<String>, AppError> {
@@ -60,19 +55,6 @@ pub fn set_tts_api_key(api_key: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Delete the TTS API key from secure storage (Qwen)
-pub fn delete_tts_api_key() -> Result<(), AppError> {
-    let entry = Entry::new(SERVICE_NAME, TTS_API_KEY_ENTRY)?;
-    // Try to delete, ignore if it doesn't exist
-    let _ = entry.delete_password();
-    Ok(())
-}
-
-/// Check if a TTS API key is configured (Qwen)
-pub fn has_tts_api_key() -> bool {
-    get_tts_api_key().unwrap_or(None).is_some()
-}
-
 /// ===== Murf API Key Management =====
 /// Get the Murf API key from secure storage
 pub fn get_murf_api_key() -> Result<Option<String>, AppError> {
@@ -92,17 +74,4 @@ pub fn set_murf_api_key(api_key: &str) -> Result<(), AppError> {
     let entry = Entry::new(SERVICE_NAME, MURF_API_KEY_ENTRY)?;
     entry.set_password(api_key)?;
     Ok(())
-}
-
-/// Delete the Murf API key from secure storage
-pub fn delete_murf_api_key() -> Result<(), AppError> {
-    let entry = Entry::new(SERVICE_NAME, MURF_API_KEY_ENTRY)?;
-    // Try to delete, ignore if it doesn't exist
-    let _ = entry.delete_password();
-    Ok(())
-}
-
-/// Check if a Murf API key is configured
-pub fn has_murf_api_key() -> bool {
-    get_murf_api_key().unwrap_or(None).is_some()
 }
