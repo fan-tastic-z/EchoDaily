@@ -21,11 +21,13 @@ pub enum AppError {
     AI(String),
 
     #[error("TTS error: {0}")]
+    #[allow(clippy::upper_case_acronyms)]
     TTS(String),
 
     #[error("Keychain error: {0}")]
     Keychain(String),
 
+    #[allow(dead_code)]
     #[error("Invalid settings: {0}")]
     InvalidSettings(String),
 }

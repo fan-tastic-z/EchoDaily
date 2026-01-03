@@ -50,31 +50,15 @@ pub enum AIError {
     Unknown(String),
 }
 
-impl AIError {
-    /// Whether the error is retryable
-    pub fn is_retryable(&self) -> bool {
-        matches!(
-            self,
-            AIError::Timeout
-                | AIError::NetworkError(_)
-                | AIError::RateLimitExceeded(_)
-                | AIError::HttpError(_)
-        )
-    }
-
-    /// Whether the error indicates authentication issue
-    pub fn is_auth_error(&self) -> bool {
-        matches!(self, AIError::NoApiKey | AIError::AuthenticationFailed(_))
-    }
-}
-
 /// Trait for AI providers
 #[async_trait]
 pub trait AIProvider: Send + Sync {
     /// Get provider name
+    #[allow(dead_code)]
     fn provider_name(&self) -> &'static str;
 
     /// Get default model
+    #[allow(dead_code)]
     fn default_model(&self) -> String;
 
     /// Check if provider is configured (has API key)

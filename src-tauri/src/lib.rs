@@ -86,6 +86,10 @@ async fn delete_entry(
 ) -> Result<bool, AppError> {
     validate_entry_date(&entry_date)?;
     let deleted = db::queries::delete_entry(&pool, &entry_date).await?;
+    if deleted {
+        // Cascade delete AI operations for this entry
+        let _ = db::queries::delete_ai_operations_for_entry(&pool, &entry_date).await?;
+    }
     Ok(deleted)
 }
 

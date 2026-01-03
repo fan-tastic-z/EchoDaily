@@ -40,6 +40,7 @@ struct QwenTTSOutput {
     #[serde(skip_serializing_if = "Option::is_none")]
     audio: Option<QwenTTSAudio>,
     #[serde(default)]
+    #[allow(dead_code)]
     finish_reason: Option<String>,
 }
 
@@ -48,6 +49,7 @@ struct QwenTTSAudio {
     #[serde(skip_serializing_if = "Option::is_none")]
     url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[allow(dead_code)]
     data: Option<String>,
 }
 
@@ -112,10 +114,6 @@ impl TTSProvider for QwenTTSProvider {
 
     fn default_model(&self) -> &'static str {
         "qwen3-tts-flash"
-    }
-
-    fn is_configured(&self) -> bool {
-        self.api_key.is_some() || crate::keychain::get_tts_api_key().ok().flatten().is_some()
     }
 
     async fn synthesize(&self, request: TTSRequest) -> Result<TTSResponse, TTSError> {

@@ -334,7 +334,7 @@ fn calculate_current_streak(dates: &[String]) -> i64 {
         if let Ok(entry_date) = chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
             if entry_date == check_date {
                 streak_count += 1;
-                check_date = check_date - chrono::Duration::days(1);
+                check_date -= chrono::Duration::days(1);
             } else if entry_date < check_date {
                 // Gap found, stop counting
                 break;

@@ -52,6 +52,7 @@ pub struct TTSVoice {
 
 /// TTS error types
 #[derive(Debug, thiserror::Error)]
+#[allow(dead_code)]
 pub enum TTSError {
     #[error("API key not configured")]
     NoApiKey,
@@ -62,6 +63,7 @@ pub enum TTSError {
     #[error("Rate limit exceeded: {0}")]
     RateLimitExceeded(String),
 
+    #[allow(dead_code)]
     #[error("Request timeout")]
     Timeout,
 
@@ -71,6 +73,7 @@ pub enum TTSError {
     #[error("Provider error: {0}")]
     ProviderError(String),
 
+    #[allow(dead_code)]
     #[error("Unsupported language: {0}")]
     UnsupportedLanguage(String),
 
@@ -81,32 +84,16 @@ pub enum TTSError {
     Unknown(String),
 }
 
-impl TTSError {
-    /// Whether the error is retryable
-    pub fn is_retryable(&self) -> bool {
-        matches!(
-            self,
-            TTSError::Timeout | TTSError::NetworkError(_) | TTSError::RateLimitExceeded(_)
-        )
-    }
-
-    /// Whether the error indicates authentication issue
-    pub fn is_auth_error(&self) -> bool {
-        matches!(self, TTSError::NoApiKey | TTSError::AuthenticationFailed(_))
-    }
-}
-
 /// TTS Provider Trait
 #[async_trait]
 pub trait TTSProvider: Send + Sync {
     /// Get provider name
+    #[allow(dead_code)]
     fn provider_name(&self) -> &'static str;
 
     /// Get default model
+    #[allow(dead_code)]
     fn default_model(&self) -> &'static str;
-
-    /// Check if provider is configured (has API key)
-    fn is_configured(&self) -> bool;
 
     /// Text to speech synthesis
     async fn synthesize(&self, request: TTSRequest) -> Result<TTSResponse, TTSError>;
