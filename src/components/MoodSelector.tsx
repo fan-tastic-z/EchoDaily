@@ -3,13 +3,13 @@ import { MOOD_OPTIONS, type MoodType } from '../types'
 import { upsertEntryMood } from '../lib/api'
 import { Sparkles, X } from 'lucide-react'
 
-// Warm color palette for each mood
+// Warm color palette for each mood - standardized with Tailwind colors
 const MOOD_COLORS = {
-  amazing: { bg: '#fef3c7', border: '#fbbf24', glow: 'rgba(251, 191, 36, 0.3)' }, // Golden warm
-  happy: { bg: '#dbeafe', border: '#60a5fa', glow: 'rgba(96, 165, 250, 0.3)' }, // Sky blue
-  neutral: { bg: '#f3f4f6', border: '#9ca3af', glow: 'rgba(156, 163, 175, 0.2)' }, // Soft gray
-  sad: { bg: '#e0e7ff', border: '#818cf8', glow: 'rgba(129, 140, 248, 0.3)' }, // Muted indigo
-  awful: { bg: '#fee2e2', border: '#f87171', glow: 'rgba(248, 113, 113, 0.3)' }, // Soft red
+  amazing: { bg: '#FEF3C7', border: '#F59E0B', glow: 'rgba(245, 158, 11, 0.25)' }, // Amber-500
+  happy: { bg: '#DBEAFE', border: '#3B82F6', glow: 'rgba(59, 130, 246, 0.25)' }, // Blue-500
+  neutral: { bg: '#F3F4F6', border: '#6B7280', glow: 'rgba(107, 114, 128, 0.15)' }, // Gray-500
+  sad: { bg: '#E0E7FF', border: '#6366F1', glow: 'rgba(99, 102, 241, 0.25)' }, // Indigo-500
+  awful: { bg: '#FEE2E2', border: '#EF4444', glow: 'rgba(239, 68, 68, 0.25)' }, // Red-500
 }
 
 interface Props {

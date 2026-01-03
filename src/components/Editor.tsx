@@ -6,7 +6,7 @@ import { useAppStore } from '../store/useAppStore'
 import { format } from 'date-fns'
 import { useAutosave } from '../hooks/useAutosave'
 import { getEntry, deleteEntry, upsertEntryMood } from '../lib/api'
-import { Trash2, Heading1, Heading2, Heading3, List, ListOrdered, Bold, Italic } from 'lucide-react'
+import { Trash2, Heading1, Heading2, Heading3, List, ListOrdered, Bold, Italic, Sparkles } from 'lucide-react'
 import { SelectionMenu } from './SelectionMenu'
 import { TTSPlayer } from './TTSPlayer'
 import { MoodSelector } from './MoodSelector'
@@ -359,24 +359,87 @@ export function Editor() {
 
   const displayDate = new Date(selectedDate + 'T00:00:00')
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return
+      }
+
+      const isMod = e.metaKey || e.ctrlKey
+
+      // Cmd/Ctrl + S - Save
+      if (isMod && e.key === 's') {
+        e.preventDefault()
+        void flushNow()
+        return
+      }
+
+      // Only process editor shortcuts when editor is focused
+      if (!editor || !editor.isFocused) return
+
+      // Cmd/Ctrl + B - Bold
+      if (isMod && e.key === 'b') {
+        e.preventDefault()
+        editor.chain().focus().toggleBold().run()
+        return
+      }
+
+      // Cmd/Ctrl + I - Italic
+      if (isMod && e.key === 'i') {
+        e.preventDefault()
+        editor.chain().focus().toggleItalic().run()
+        return
+      }
+
+      // Cmd/Ctrl + 1/2/3 - Headings
+      if (isMod && (e.key === '1' || e.key === '2' || e.key === '3')) {
+        e.preventDefault()
+        const level = parseInt(e.key) as 1 | 2 | 3
+        editor.chain().focus().toggleHeading({ level }).run()
+        return
+      }
+
+      // Cmd/Ctrl + Shift + 7 - Ordered list
+      if (isMod && e.shiftKey && e.key === '7') {
+        e.preventDefault()
+        editor.chain().focus().toggleOrderedList().run()
+        return
+      }
+
+      // Cmd/Ctrl + Shift + 8 - Bullet list
+      if (isMod && e.shiftKey && e.key === '8') {
+        e.preventDefault()
+        editor.chain().focus().toggleBulletList().run()
+        return
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [editor, flushNow])
+
   // Toolbar button component
   const ToolbarButton = ({
     onClick,
     isActive,
     children,
     title,
+    shortcut,
   }: {
     onClick: () => void
     isActive?: boolean
     children: React.ReactNode
     title: string
+    shortcut?: string
   }) => (
     <button
       onClick={onClick}
       className={`p-2 rounded-lg transition-colors ${
         isActive ? 'bg-accent-blue text-white' : 'hover:bg-white/60 text-stone-600'
       }`}
-      title={title}
+      title={shortcut ? `${title} (${shortcut})` : title}
     >
       {children}
     </button>
@@ -425,6 +488,30 @@ export function Editor() {
         <div className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-3xl mx-auto">
             <div className="bg-white/60 rounded-lg paper-shadow min-h-[500px]">
+              {/* Empty State */}
+              {!currentEntry && !editor?.getText().trim() && (
+                <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
+                  <div className="w-20 h-20 mb-6 rounded-full bg-gradient-to-br from-amber-100 to-blue-100 flex items-center justify-center shadow-sm">
+                    <Sparkles className="w-10 h-10 text-accent-blue" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-ink-primary mb-2">Start your journal</h3>
+                  <p className="text-sm text-ink-secondary max-w-xs text-center">
+                    {format(displayDate, 'EEEE, MMMM d')} — Write something for today...
+                  </p>
+                  <div className="mt-6 flex items-center gap-3 text-xs text-ink-muted">
+                    <span className="flex items-center gap-1">
+                      <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono">⌘S</kbd>
+                      <span>to save</span>
+                    </span>
+                    <span className="text-stone-300">|</span>
+                    <span className="flex items-center gap-1">
+                      <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono">⌘B</kbd>
+                      <span>bold</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Formatting Toolbar */}
               {editor && (
                 <div className="flex items-center gap-1 p-3 border-b border-stone-200/60">
@@ -433,6 +520,7 @@ export function Editor() {
                     onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                     isActive={editor.isActive('heading', { level: 1 })}
                     title="Heading 1"
+                    shortcut="⌘1"
                   >
                     <Heading1 className="w-4 h-4" />
                   </ToolbarButton>
@@ -440,6 +528,7 @@ export function Editor() {
                     onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                     isActive={editor.isActive('heading', { level: 2 })}
                     title="Heading 2"
+                    shortcut="⌘2"
                   >
                     <Heading2 className="w-4 h-4" />
                   </ToolbarButton>
@@ -447,6 +536,7 @@ export function Editor() {
                     onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
                     isActive={editor.isActive('heading', { level: 3 })}
                     title="Heading 3"
+                    shortcut="⌘3"
                   >
                     <Heading3 className="w-4 h-4" />
                   </ToolbarButton>
@@ -458,6 +548,7 @@ export function Editor() {
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     isActive={editor.isActive('bold')}
                     title="Bold"
+                    shortcut="⌘B"
                   >
                     <Bold className="w-4 h-4" />
                   </ToolbarButton>
@@ -465,6 +556,7 @@ export function Editor() {
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                     isActive={editor.isActive('italic')}
                     title="Italic"
+                    shortcut="⌘I"
                   >
                     <Italic className="w-4 h-4" />
                   </ToolbarButton>
@@ -476,6 +568,7 @@ export function Editor() {
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
                     isActive={editor.isActive('bulletList')}
                     title="Bullet list"
+                    shortcut="⌘⇧8"
                   >
                     <List className="w-4 h-4" />
                   </ToolbarButton>
@@ -483,6 +576,7 @@ export function Editor() {
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}
                     isActive={editor.isActive('orderedList')}
                     title="Ordered list"
+                    shortcut="⌘⇧7"
                   >
                     <ListOrdered className="w-4 h-4" />
                   </ToolbarButton>

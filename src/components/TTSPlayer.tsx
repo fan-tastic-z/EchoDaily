@@ -267,10 +267,16 @@ export function TTSPlayer({ text, language = 'auto', onPlayingChange }: TTSPlaye
 
   return (
     <div className="flex items-center gap-2">
-      {/* Error message */}
+      {/* Error message with tooltip */}
       {error && (
-        <div className="text-xs text-red-500 max-w-xs truncate" title={error}>
-          {error}
+        <div className="group relative">
+          <div className="text-xs text-red-500 max-w-[120px] truncate cursor-help">
+            {error}
+          </div>
+          <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-stone-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-normal max-w-xs z-10">
+            {error}
+            <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-stone-800" />
+          </div>
         </div>
       )}
 

@@ -15,13 +15,13 @@ import { listEntries, searchEntries, getWritingStats } from '../lib/api'
 import { MOOD_OPTIONS } from '../types'
 import type { DiaryEntry, WritingStats } from '../types'
 
-// Mood colors for calendar badges
+// Mood colors for calendar badges - standardized with Tailwind colors
 const MOOD_COLORS = {
-  amazing: { bg: '#fef3c7', border: '#fbbf24' },
-  happy: { bg: '#dbeafe', border: '#60a5fa' },
-  neutral: { bg: '#f3f4f6', border: '#9ca3af' },
-  sad: { bg: '#e0e7ff', border: '#818cf8' },
-  awful: { bg: '#fee2e2', border: '#f87171' },
+  amazing: { bg: '#FEF3C7', border: '#F59E0B' },
+  happy: { bg: '#DBEAFE', border: '#3B82F6' },
+  neutral: { bg: '#F3F4F6', border: '#6B7280' },
+  sad: { bg: '#E0E7FF', border: '#6366F1' },
+  awful: { bg: '#FEE2E2', border: '#EF4444' },
 }
 
 export function Sidebar() {
@@ -134,7 +134,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between">
           <button
             onClick={prevMonth}
-            className="p-1.5 rounded-lg hover:bg-white/60 transition-all hover:scale-110"
+            className="p-1.5 rounded-lg hover:bg-white/60 transition-all duration-200 hover:scale-105 active:scale-95"
           >
             <ChevronLeft className="w-4 h-4 text-stone-600" />
           </button>
@@ -143,7 +143,7 @@ export function Sidebar() {
           </span>
           <button
             onClick={nextMonth}
-            className="p-1.5 rounded-lg hover:bg-white/60 transition-all hover:scale-110"
+            className="p-1.5 rounded-lg hover:bg-white/60 transition-all duration-200 hover:scale-105 active:scale-95"
           >
             <ChevronRight className="w-4 h-4 text-stone-600" />
           </button>
@@ -265,8 +265,8 @@ export function Sidebar() {
                     selected
                       ? 'bg-accent-blue text-white shadow-lg scale-105'
                       : moodInfo
-                        ? 'hover:scale-105 hover:shadow-md'
-                        : 'hover:bg-white/50 hover:scale-105'
+                        ? 'hover:scale-105 hover:shadow-md active:scale-95'
+                        : 'hover:bg-white/50 hover:scale-105 active:scale-95'
                   }
                   ${isTodayDate && !selected ? 'ring-2 ring-accent-blue/40' : ''}
                 `}

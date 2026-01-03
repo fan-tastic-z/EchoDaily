@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "echo-daily",
+        "title": "Echo Daily",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "label": "main"
       }
     ],
     "security": {

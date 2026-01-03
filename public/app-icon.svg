@@ -1,0 +1,128 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Paper texture gradient -->
+    <linearGradient id="paperGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FAF8F3"/>
+      <stop offset="50%" style="stop-color:#F5F1E8"/>
+      <stop offset="100%" style="stop-color:#E8E0D0"/>
+    </linearGradient>
+
+    <!-- Cover gradient -->
+    <linearGradient id="coverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A6FA5"/>
+      <stop offset="100%" style="stop-color:#3D5D8C"/>
+    </linearGradient>
+
+    <!-- Inner shadow for depth -->
+    <linearGradient id="innerShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(0,0,0,0.15)"/>
+      <stop offset="100%" style="stop-color:rgba(0,0,0,0)"/>
+    </linearGradient>
+
+    <!-- Echo wave gradient -->
+    <linearGradient id="echoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4A6FA5;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#4A6FA5;stop-opacity:0.2"/>
+    </linearGradient>
+
+    <!-- Drop shadow -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#2C2416" flood-opacity="0.15"/>
+    </filter>
+
+    <!-- Soft glow -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle with subtle gradient -->
+  <circle cx="256" cy="256" r="240" fill="url(#paperGradient)" filter="url(#shadow)"/>
+
+  <!-- Decorative ring -->
+  <circle cx="256" cy="256" r="232" fill="none" stroke="#4A6FA5" stroke-width="2" stroke-opacity="0.1"/>
+
+  <!-- Open book/journal shape -->
+  <g filter="url(#shadow)">
+    <!-- Left page -->
+    <path d="M256 140
+             C220 140 180 150 140 165
+             L140 380
+             C180 360 220 350 256 350
+             L256 140Z"
+          fill="url(#paperGradient)"
+          stroke="#E8E0D0"
+          stroke-width="2"/>
+
+    <!-- Right page -->
+    <path d="M256 140
+             C292 140 332 150 372 165
+             L372 380
+             C332 360 292 350 256 350
+             L256 140Z"
+          fill="url(#paperGradient)"
+          stroke="#E8E0D0"
+          stroke-width="2"/>
+
+    <!-- Book spine -->
+    <rect x="252" y="140" width="8" height="210" fill="#4A6FA5" rx="2"/>
+  </g>
+
+  <!-- Decorative bookmark -->
+  <path d="M280 140 L280 200 L295 190 L310 200 L310 140 Z"
+        fill="#4A6FA5"
+        filter="url(#shadow)"/>
+
+  <!-- Echo waves emanating from center -->
+  <g stroke="#4A6FA5" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8">
+    <!-- Left waves -->
+    <path d="M180 256 Q165 256 155 245" stroke-width="2.5">
+      <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M170 256 Q150 256 135 240" stroke-width="2">
+      <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite" begin="0.3s"/>
+    </path>
+
+    <!-- Right waves -->
+    <path d="M332 256 Q347 256 357 245" stroke-width="2.5">
+      <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M342 256 Q362 256 377 240" stroke-width="2">
+      <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite" begin="0.3s"/>
+    </path>
+  </g>
+
+  <!-- "E" monogram in center -->
+  <g filter="url(#glow)">
+    <text x="256" y="280"
+          font-family="'Georgia', 'Times New Roman', serif"
+          font-size="72"
+          font-weight="600"
+          font-style="italic"
+          fill="#4A6FA5"
+          text-anchor="middle"
+          dominant-baseline="middle">
+      E
+    </text>
+  </g>
+
+  <!-- Decorative writing lines on pages -->
+  <g stroke="#D4C9B8" stroke-width="1.5">
+    <line x1="160" y1="200" x2="235" y2="200" opacity="0.6"/>
+    <line x1="160" y1="220" x2="235" y2="220" opacity="0.5"/>
+    <line x1="160" y1="240" x2="225" y2="240" opacity="0.6"/>
+
+    <line x1="277" y1="200" x2="352" y2="200" opacity="0.6"/>
+    <line x1="277" y1="220" x2="340" y2="220" opacity="0.5"/>
+    <line x1="277" y1="240" x2="352" y2="240" opacity="0.6"/>
+  </g>
+
+  <!-- Subtle paper texture overlay -->
+  <circle cx="256" cy="256" r="240" fill="url(#paperGradient)" opacity="0.03">
+    <animate attributeName="opacity" values="0.03;0.05;0.03" dur="4s" repeatCount="indefinite"/>
+  </circle>
+</svg>

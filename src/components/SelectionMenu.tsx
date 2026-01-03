@@ -122,13 +122,27 @@ export function SelectionMenu({ isVisible, position, selectedText, onReplace, on
       }}
     >
       {isLoading ? (
-        <div className="flex items-center gap-2 px-3 py-2 text-sm text-stone-600">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Processing...</span>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="relative">
+            <Loader2 className="w-5 h-5 animate-spin text-accent-blue" />
+            <div className="absolute inset-0 w-5 h-5 rounded-full border-2 border-accent-blue/20 animate-ping" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-stone-700">AI is thinking...</span>
+            <span className="text-xs text-stone-500">This may take a moment</span>
+          </div>
         </div>
       ) : error ? (
-        <div className="px-3 py-2 text-sm text-red-600 max-w-[200px] whitespace-normal">
-          {error}
+        <div className="px-4 py-3 max-w-xs">
+          <div className="flex items-start gap-2">
+            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-red-100 flex items-center justify-center mt-0.5">
+              <span className="text-red-600 text-xs">!</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-red-700">Something went wrong</p>
+              <p className="text-xs text-red-600 mt-1 break-words">{error}</p>
+            </div>
+          </div>
         </div>
       ) : translation ? (
         <div className="px-4 py-3 max-w-sm">

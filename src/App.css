@@ -49,6 +49,35 @@
   }
 }
 
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.2s ease-out forwards;
 }
@@ -59,6 +88,14 @@
 
 .animate-slide-down {
   animation: slide-down 0.25s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.2s ease-out forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
 }
 
 /* Paper texture */
@@ -76,4 +113,67 @@
 .highlight-ai {
   background: linear-gradient(transparent 60%, rgba(74, 111, 165, 0.2) 60%);
   padding: 0 2px;
+}
+
+/* Enhanced transitions */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-bounce {
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Button hover effects */
+@layer components {
+  .btn-hover-lift {
+    @apply transition-smooth;
+  }
+
+  .btn-hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(44, 36, 22, 0.12);
+  }
+
+  .btn-hover-lift:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(44, 36, 22, 0.08);
+  }
+}
+
+/* Focus visible styles for accessibility */
+@layer components {
+  * {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-2 focus-visible:ring-offset-paper-bg;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-stone-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-stone-400;
+}
+
+/* Loading shimmer */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.05) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
