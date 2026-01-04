@@ -6,7 +6,17 @@ import { useAppStore } from '../store/useAppStore'
 import { format } from 'date-fns'
 import { useAutosave } from '../hooks/useAutosave'
 import { getEntry, deleteEntry, upsertEntryMood } from '../lib/api'
-import { Trash2, Heading1, Heading2, Heading3, List, ListOrdered, Bold, Italic, Sparkles } from 'lucide-react'
+import {
+  Trash2,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Bold,
+  Italic,
+  Sparkles,
+} from 'lucide-react'
 import { SelectionMenu } from './SelectionMenu'
 import { TTSPlayer } from './TTSPlayer'
 import { MoodSelector } from './MoodSelector'
@@ -494,18 +504,24 @@ export function Editor() {
                   <div className="w-20 h-20 mb-6 rounded-full bg-gradient-to-br from-amber-100 to-blue-100 flex items-center justify-center shadow-sm">
                     <Sparkles className="w-10 h-10 text-accent-blue" />
                   </div>
-                  <h3 className="text-xl font-semibold text-ink-primary mb-2">Start your journal</h3>
+                  <h3 className="text-xl font-semibold text-ink-primary mb-2">
+                    Start your journal
+                  </h3>
                   <p className="text-sm text-ink-secondary max-w-xs text-center">
                     {format(displayDate, 'EEEE, MMMM d')} — Write something for today...
                   </p>
                   <div className="mt-6 flex items-center gap-3 text-xs text-ink-muted">
                     <span className="flex items-center gap-1">
-                      <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono">⌘S</kbd>
+                      <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono">
+                        ⌘S
+                      </kbd>
                       <span>to save</span>
                     </span>
                     <span className="text-stone-300">|</span>
                     <span className="flex items-center gap-1">
-                      <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono">⌘B</kbd>
+                      <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono">
+                        ⌘B
+                      </kbd>
                       <span>bold</span>
                     </span>
                   </div>
