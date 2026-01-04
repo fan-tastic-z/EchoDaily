@@ -79,11 +79,7 @@ export function AISettingsDialog({ isOpen, onClose }: Props) {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Provider</label>
-            <select
-              value={settings.provider}
-              disabled
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-stone-50 text-stone-500"
-            >
+            <select value={settings.provider} disabled>
               <option value="zhipu">Zhipu AI (智谱)</option>
             </select>
             <p className="text-xs text-stone-500 mt-1">Currently only Zhipu AI is supported</p>
@@ -91,11 +87,7 @@ export function AISettingsDialog({ isOpen, onClose }: Props) {
 
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Model</label>
-            <select
-              value={settings.model}
-              disabled
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-stone-50 text-stone-500"
-            >
+            <select value={settings.model} disabled>
               <option value="glm-4-flash">GLM-4 Flash</option>
             </select>
             <p className="text-xs text-stone-500 mt-1">Cost-effective model for development</p>
@@ -108,7 +100,6 @@ export function AISettingsDialog({ isOpen, onClose }: Props) {
               value={settings.apiKey}
               onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
               placeholder="Enter your Zhipu AI API key"
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
               disabled={isLoading}
             />
             <p className="text-xs text-stone-500 mt-1">

@@ -209,7 +209,6 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
             <select
               value={settings.provider}
               onChange={(e) => handleProviderChange(e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
               disabled={isLoading}
             >
               {availableProviders.map((provider) => (
@@ -224,11 +223,7 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
           {/* Model Selection */}
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Model</label>
-            <select
-              value={settings.model}
-              disabled
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-stone-50 text-stone-500"
-            >
+            <select value={settings.model} disabled>
               <option value={currentProviderInfo?.model}>{currentProviderInfo?.model}</option>
             </select>
             <p className="text-xs text-stone-500 mt-1">
@@ -244,7 +239,6 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
             <select
               value={settings.voice}
               onChange={(e) => setSettings({ ...settings, voice: e.target.value })}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
               disabled={isLoading || voices.length === 0}
             >
               {Object.entries(voicesByLanguage).map(([lang, langVoices]) => (
@@ -274,8 +268,7 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
               step="0.1"
               value={settings.speed}
               onChange={(e) => setSettings({ ...settings, speed: parseFloat(e.target.value) })}
-              className="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-blue-600 opacity-50"
-              disabled={isLoading}
+              disabled={isLoading || !currentProviderInfo?.speedSupported}
             />
             <div className="flex justify-between text-xs text-stone-500 mt-1">
               <span>0.5x (Slow)</span>
@@ -297,7 +290,6 @@ export function TTSSettingsDialog({ isOpen, onClose }: Props) {
               value={settings.apiKey}
               onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
               placeholder={currentProviderInfo?.apiPlaceholder}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
               disabled={isLoading}
             />
             <p className="text-xs text-stone-500 mt-1">
