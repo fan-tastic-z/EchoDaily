@@ -172,7 +172,8 @@ impl AIProvider for ZhipuProvider {
 
         let result = response
             .choices
-            .first().map(|c| c.message.content.clone())
+            .first()
+            .map(|c| c.message.content.clone())
             .unwrap_or_default();
 
         Ok(AIResponse {
