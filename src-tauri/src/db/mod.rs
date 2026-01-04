@@ -6,9 +6,9 @@ use tauri::Manager;
 
 pub async fn get_pool(app: &tauri::AppHandle) -> Result<SqlitePool, crate::error::AppError> {
     let app_dir = app.path().app_data_dir().map_err(|e| {
-        crate::error::AppError::Io(std::io::Error::other(
-            format!("Failed to resolve app data directory: {e}"),
-        ))
+        crate::error::AppError::Io(std::io::Error::other(format!(
+            "Failed to resolve app data directory: {e}"
+        )))
     })?;
 
     let legacy_db_path = std::env::var("HOME")
